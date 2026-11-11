@@ -28,7 +28,7 @@ and the build run in a sandbox with no network and an empty home directory (`scr
 When a library your app uses changes, Upkeep automatically opens a pull request that fixes your code, and only if
 your own tests still pass.
 
-1. Add `.github/workflows/upkeep.yml` to your repo (example: [upkeep-demo-app-1](https://github.com/dshak1/upkeep-demo-app-1/blob/main/.github/workflows/upkeep.yml)).
+1. Add `.github/workflows/upkeep.yml` to your repo (the one in [upkeep-demo-app-1](https://github.com/dshak1/upkeep-demo-app-1/blob/main/.github/workflows/upkeep.yml)).
    It runs on `repository_dispatch` (`sdk-release`) and uses this repo as an Action (`uses: dshak1/upkeep@<ref>`).
 2. The Action applies the provider's migration spec (`specs/*.json`), installs, runs your build and your tests, and
    opens a pull request only if they pass. If they fail it opens an issue for a human instead.
