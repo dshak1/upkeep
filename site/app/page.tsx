@@ -1,6 +1,7 @@
 import { headers } from "next/headers"
 
 import { ChartCards } from "@/components/ChartCards"
+import { FlickeringGrid } from "@/components/FlickeringGrid"
 import { InstallPill } from "@/components/InstallPill"
 import { Pill } from "@/components/Pill"
 import { PullRequestCard } from "@/components/PullRequestCard"
@@ -37,27 +38,14 @@ export default async function Page() {
   return (
     <main className="lp relative overflow-hidden">
       <section aria-labelledby="hero-title" className="relative isolate flex min-h-[100svh] flex-col">
-        <video
-          aria-hidden
-          autoPlay
-          muted
-          loop
-          playsInline
-          preload="auto"
-          poster="/media/hero.jpg"
-          className="absolute inset-0 -z-20 h-full w-full object-cover"
-        >
-          <source src="/media/hero.webm" type="video/webm" />
-          <source src="/media/hero.mp4" type="video/mp4" />
-        </video>
-        <div
-          aria-hidden
-          className="absolute inset-0 -z-10"
-          style={{
-            background:
-              "linear-gradient(to top, #0c1116 0%, rgb(12 17 22 / 0.92) 22%, rgb(12 17 22 / 0.5) 55%, rgb(12 17 22 / 0.25) 100%), linear-gradient(to right, rgb(12 17 22 / 0.75) 0%, rgb(12 17 22 / 0.2) 60%, transparent 100%)",
-          }}
-        />
+        <div aria-hidden className="absolute inset-0 -z-20 overflow-hidden bg-paper">
+          <div className="aurora aurora-blue right-[-10%] top-[-20%] h-[70vh] w-[60vw]" />
+          <div className="aurora aurora-amber right-[15%] top-[25%] h-[45vh] w-[40vw]" />
+          <div className="absolute inset-0 [mask-image:radial-gradient(ellipse_80%_75%_at_75%_30%,#000_25%,transparent_80%)]">
+            <FlickeringGrid />
+          </div>
+        </div>
+        <div aria-hidden className="absolute inset-x-0 bottom-0 -z-10 h-[55%] bg-gradient-to-t from-paper via-paper/80 to-transparent" />
 
         <header className="mx-auto flex h-16 w-full max-w-[1280px] items-center justify-between px-4 sm:px-10">
           <Mark />
