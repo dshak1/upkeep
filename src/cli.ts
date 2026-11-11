@@ -5,10 +5,13 @@
 // upkeep targets [--since 2026-08-01]                  find public repos still on the old packages
 // upkeep guard-rows                              add the agent block and CI guard to moved repos from earlier runs
 // upkeep report                                  regenerate the README table from runs/results.jsonl
+// upkeep login                                   log in with the email you paid with (run and init need it)
+// upkeep init [dir]                              add .github/workflows/upkeep.yml to a repo
 import { readFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { homedir } from 'node:os';
 import { applySpec } from './apply.ts';
+import { init, login, requirePilot } from './auth.ts';
 import { checkC } from './checkc.ts';
 import { addGuard, readResults, runTarget, type Row, type Target } from './run.ts';
 import { appendFileSync, existsSync } from 'node:fs';
@@ -23,8 +26,15 @@ const opt = (f: string) => { const i = args.indexOf(f); return i >= 0 ? args[i +
 const spec = loadSpec(opt('--spec') ?? join(ROOT, 'specs/hexclave.json'));
 const RESULTS = join(ROOT, 'runs/results.jsonl');
 const [cmd, target] = args;
+if ((cmd === 'run' || cmd === 'init') && !(await requirePilot())) process.exit(1);
 
-if (cmd === 'apply' && target) {
+if (cmd === 'login') {
+  const s = await login();
+  console.log(s.ok ? `Logged in as ${s.email}.` : `Login failed (${s.reason}).`);
+  process.exitCode = s.ok ? 0 : 1;
+} else if (cmd === 'init') {
+  console.log(init(resolve(target ?? '.'), join(ROOT, 'templates/upkeep.yml')));
+} else if (cmd === 'apply' && target) {
   const rep = applySpec(target, spec, { identifiers: !flag('--swap-only'), write: !flag('--dry-run') });
   for (const f of rep.changedFiles) {
     const es = rep.edits.filter((e) => e.file === f);
@@ -88,6 +98,6 @@ if (cmd === 'apply' && target) {
   writeReadme(join(ROOT, 'README.md'), readResults(RESULTS));
   console.log('README table written from runs/results.jsonl');
 } else {
-  console.log('usage: upkeep apply <dir> [--swap-only] [--dry-run] | check <dir> | run <targets.tsv> [--build] [--only owner/repo] [--again] | report');
+  console.log('usage: upkeep login | init [dir] | apply <dir> [--swap-only] [--dry-run] | check <dir> | run <targets.tsv> [--build] [--only owner/repo] [--again] | report');
   process.exitCode = 2;
 }

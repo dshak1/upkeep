@@ -1,0 +1,21 @@
+# Upkeep: when a library this repo uses is renamed, move the code to the new name and open a pull request,
+# only if this repo's own build and tests still pass. https://github.com/dshak1/upkeep
+name: upkeep
+on:
+  schedule:
+    - cron: "0 6 * * 1"
+  workflow_dispatch:
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+  actions: write
+  statuses: write
+jobs:
+  upkeep:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dshak1/upkeep@main
+        with:
+          spec: hexclave

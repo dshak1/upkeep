@@ -5,12 +5,17 @@
   "type": "module",
   "private": true,
   "license": "MIT",
-  "bin": { "upkeep": "src/cli.ts" },
-  "engines": { "node": ">=22.18" },
+  "bin": {
+    "upkeep": "src/cli.js"
+  },
+  "engines": {
+    "node": ">=22.18"
+  },
   "scripts": {
     "test": "node --test test/*.test.ts",
     "typecheck": "tsc --noEmit",
-    "upkeep": "node src/cli.ts"
+    "upkeep": "node src/cli.ts",
+    "prepare": "tsc -p tsconfig.build.json"
   },
   "dependencies": {
     "typescript": "5.9.3"
