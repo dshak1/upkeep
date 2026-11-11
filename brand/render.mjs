@@ -54,9 +54,11 @@ out('logo/favicon.svg', logos['logo/upkeep-mark.svg']);
 
 // ---------- data, only from runs/results.jsonl ----------
 const spec = JSON.parse(readFileSync(join(root, 'specs/hexclave.json'), 'utf8'));
-const rows = readFileSync(join(root, 'runs/results.jsonl'), 'utf8').split('\n').filter(Boolean).map((l) => JSON.parse(l));
-const greenBefore = rows.filter((r) => r.before?.install?.ok && r.before?.typecheck?.ok);
-const moved = greenBefore.filter((r) => r.after?.typecheck?.ok && r.checkC?.pass);
+// Same counting as src/report.ts (the README table): last run per repo wins, and a repo counts when its build is green.
+const all = readFileSync(join(root, 'runs/results.jsonl'), 'utf8').split('\n').filter(Boolean).map((l) => JSON.parse(l));
+const rows = [...new Map(all.map((r) => [r.id, r])).values()];
+const greenBefore = rows.filter((r) => r.before?.build?.ok);
+const moved = greenBefore.filter((r) => r.after?.build?.ok && r.checkC?.pass);
 const files = moved.reduce((a, r) => a + (r.change?.files ?? 0), 0);
 const lines = moved.reduce((a, r) => a + (r.change?.added ?? 0) + (r.change?.removed ?? 0), 0);
 const stats = { attempted: rows.length, counted: greenBefore.length, moved: moved.length, files, lines };
@@ -108,7 +110,7 @@ const pages = {
     <div style="position:absolute;left:80px;top:80px">${sized(lockupDark, 300)}</div>
     <div class="mono dim" style="position:absolute;left:80px;top:250px;font-size:28px">@stackframe/* → @hexclave/*</div>
     <div style="position:absolute;left:80px;top:330px;display:flex;align-items:baseline;gap:24px;font-weight:800;line-height:1"><span class="ok" style="font-size:300px;letter-spacing:-.05em">${stats.moved}</span><span class="dim" style="font-size:120px;letter-spacing:-.02em">of ${stats.counted}</span></div>
-    <div style="position:absolute;left:80px;top:660px;width:920px;font-size:52px;font-weight:700;line-height:1.15;letter-spacing:-.02em">repos that type-checked before the move still type-check after it.</div>
+    <div style="position:absolute;left:80px;top:660px;width:920px;font-size:52px;font-weight:700;line-height:1.15;letter-spacing:-.02em">repos that built before Upkeep still build after it.</div>
     <div class="mono" style="position:absolute;left:80px;top:900px;font-size:30px;line-height:1.8">
       <div><span class="dim">repos attempted ·</span> ${stats.attempted}</div>
       <div><span class="dim">files changed ·</span> ${stats.files}</div>

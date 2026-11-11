@@ -2,8 +2,9 @@
 
 ## Where we actually are (2026-11-11)
 
-From `runs/results.jsonl`: 1 repo attempted, 1 moved, type check and build green before and after, 9 files, +15 / -15,
-0 left for a human. 13 more repos are queued in `targets/hexclave.tsv`.
+From `runs/results.jsonl` (last run per repo): 5 repos attempted, 3 built before the move, and all 3 still build after it
+with none of the old package left (41 files, 146 lines changed across the 3). 9 more repos are queued in
+`targets/hexclave.tsv`.
 
 Users: none yet, and nothing measures them yet. So the campaign does not lead with user numbers. It leads with the one
 thing nobody else in this space shows: the receipt. Every week the scoreboard grows from real runs, and the follower
@@ -56,13 +57,13 @@ the buyer. Stars and followers are how they hear about us.
 
 > First receipt: hexclave/multi-tenant-starter-template
 > 9 files, +15 / -15
-> type check: green 3.1s → green 3.1s
-> build: green 43.8s → green 47.3s
+> type check: green 2.2s → green 4.9s
+> build: green 22s → green 24.6s
 > left for a human: 0
 > [card-hexclave__multi-tenant-starter-template.png]
 
 > The build runs in a sandbox: no network, empty home dir. If the move broke something, the after column goes red and we
-> say so. Next: the other 13 repos on the list. Scoreboard every week.
+> say so. Next: the other 9 repos on the list. Scoreboard every week.
 > github.com/dshak1/upkeep
 
 **Day 1, LinkedIn (each founder, personal)**
@@ -73,7 +74,8 @@ the buyer. Stars and followers are how they hear about us.
 > proof instead: Upkeep runs the repo's own type check and build before the move and after it, in a sandbox, and
 > publishes both.
 >
-> First repo: green before, green after, 9 files changed, nothing left for a human.
+> First 5 repos: 3 built before the move, and all 3 still build after it. The other 2 did not build before, and we show
+> those too.
 >
 > Next 30 days we run it on every public repo we can find on the old Stack Auth packages, and post every result,
 > including the red ones. Code is MIT: github.com/dshak1/upkeep
