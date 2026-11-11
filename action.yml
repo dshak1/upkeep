@@ -23,7 +23,7 @@ inputs:
     description: Workflow file to run on the PR branch so the PR shows the repo's own checks (a PR opened with GITHUB_TOKEN does not start workflows by itself). Empty to skip.
     default: ci.yml
   token:
-    description: Token used to push the branch and open the pull request.
+    description: Token used to push the branch, open the pull request and set the commit status (needs contents, pull-requests, issues, actions and statuses write).
     default: ${{ github.token }}
 outputs:
   result:
@@ -126,9 +126,35 @@ runs:
           if [ -n "$url" ]; then gh pr edit "$url" --title "$title" --body-file "$body" >/dev/null
           else url=$(gh pr create --head "$branch" --base "${GITHUB_BASE_REF:-$(gh repo view --json defaultBranchRef --jq .defaultBranchRef.name)}" --title "$title" --body-file "$body"); fi
           echo "PR: $url"
-          if [ -n "$CI_WORKFLOW" ]; then gh workflow run "$CI_WORKFLOW" --ref "$branch" && echo "started $CI_WORKFLOW on $branch"; fi
           echo "result=pr" >> "$GITHUB_OUTPUT"; echo "pr-url=$url" >> "$GITHUB_OUTPUT"
           echo "### Upkeep opened $url" >> "$GITHUB_STEP_SUMMARY"
+          if [ -n "$CI_WORKFLOW" ]; then
+            # A branch pushed with GITHUB_TOKEN starts no workflows, and a workflow_dispatch run is not listed on the PR.
+            # So: start the repo's own CI on the branch, wait for it, and put its result on the PR's head commit as a status.
+            sha=$(git rev-parse HEAD)
+            ctx="${CI_WORKFLOW%.y*ml}"
+            status() { gh api -X POST "repos/$GITHUB_REPOSITORY/statuses/$sha" -f state="$1" -f context="$ctx" -f description="$2" -f target_url="$3" >/dev/null; }
+            since=$(date -u +%FT%TZ)
+            gh workflow run "$CI_WORKFLOW" --ref "$branch" && echo "started $CI_WORKFLOW on $branch"
+            status pending "$CI_WORKFLOW running on this commit" "$run_url"
+            ci_id=""
+            for i in $(seq 1 30); do
+              ci_id=$(gh run list --workflow "$CI_WORKFLOW" --branch "$branch" --event workflow_dispatch --limit 5 --json databaseId,createdAt,headSha \
+                --jq "[.[] | select(.headSha == \"$sha\" and .createdAt >= \"$since\")][0].databaseId // empty")
+              [ -n "$ci_id" ] && break; sleep 2
+            done
+            if [ -z "$ci_id" ]; then status error "could not find the $CI_WORKFLOW run" "$run_url"; exit 0; fi
+            ci_url="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$ci_id"
+            status pending "$CI_WORKFLOW running on this commit" "$ci_url"
+            gh run watch "$ci_id" --interval 3 > /dev/null 2>&1 || true
+            concl=$(gh run view "$ci_id" --json conclusion --jq .conclusion)
+            case "$concl" in
+              success) status success "$CI_WORKFLOW passed on this commit" "$ci_url" ;;
+              *) status failure "$CI_WORKFLOW: $concl" "$ci_url" ;;
+            esac
+            echo "$CI_WORKFLOW on the PR: $concl ($ci_url)"
+            echo "ci=$concl" >> "$GITHUB_OUTPUT"
+          fi
         else
           why="${FAILED:+$FAILED failed after the move}"; [ "$CHECKC" != "0" ] && why="${why:+$why; }Check C failed (old names left)"
           {
