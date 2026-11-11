@@ -100,7 +100,7 @@ runs:
         to=$(node -p "Object.values(require('${{ steps.apply.outputs.spec }}').packages)[0].to")
         slug=$(echo "$to" | tr -c 'A-Za-z0-9.\n' '-' | sed 's/^-*//')
         branch="upkeep/${slug}${RELEASE:+-$RELEASE}"
-        title="Move to $to${RELEASE:+ $RELEASE}: build and tests pass"
+        title="Fix code for the SDK rename to $to${RELEASE:+ $RELEASE} (build and tests pass)"
         body="$RUNNER_TEMP/upkeep-pr.md"
         run_url="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
         if [ "$OK" = "true" ] && [ "$CHECKC" = "0" ]; then

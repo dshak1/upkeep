@@ -6,6 +6,8 @@
 // upkeep targets [--since 2026-08-01]                  find public repos still on the old packages
 // upkeep guard-rows                              add the agent block and CI guard to moved repos from earlier runs
 // upkeep report                                  regenerate the README table from runs/results.jsonl
+// upkeep watch --github owner/repo | --npm pkg,pkg  (--consumers a/b,c/d | --discover owner) [--every 5] [--log f.jsonl]
+//                                                tell every repo with Upkeep installed, the moment the provider ships
 import { readFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { homedir } from 'node:os';
@@ -17,6 +19,7 @@ import { prBody } from './pr.ts';
 import { writeReadme } from './report.ts';
 import { loadSpec } from './spec.ts';
 import { findTargets, writeTargets } from './targets.ts';
+import { watch } from './watch.ts';
 
 const ROOT = resolve(dirname(new URL(import.meta.url).pathname), '..');
 const args = process.argv.slice(2);
@@ -82,6 +85,12 @@ if (cmd === 'apply' && target) {
     console.log(`${r.repo}: guard ${g.passes ? 'passes' : 'FAILS'} (${g.files.join(', ')})`);
   }
   writeReadme(join(ROOT, 'README.md'), readResults(RESULTS));
+} else if (cmd === 'watch') {
+  await watch({
+    github: opt('--github'), npm: opt('--npm')?.split(',').filter(Boolean),
+    consumers: opt('--consumers')?.split(',').filter(Boolean), discover: opt('--discover'),
+    intervalSec: Number(opt('--every') ?? 5), log: opt('--log'), once: flag('--once'),
+  });
 } else if (cmd === 'report') {
   writeReadme(join(ROOT, 'README.md'), readResults(RESULTS));
   console.log('README table written from runs/results.jsonl');

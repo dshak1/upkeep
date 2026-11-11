@@ -22,3 +22,21 @@ Every row below was written by `node src/cli.ts run targets/hexclave.tsv --build
 into this table by `node src/cli.ts report`. Same install command and the same checks before and after; the type check
 and the build run in a sandbox with no network and an empty home directory (`scripts/box.sh`).
 
+
+## Install it once: the Action and the watcher
+
+When a library your app uses changes, Upkeep automatically opens a pull request that fixes your code, and only if
+your own tests still pass.
+
+1. Add `.github/workflows/upkeep.yml` to your repo (example: [upkeep-demo-app-1](https://github.com/dshak1/upkeep-demo-app-1/blob/main/.github/workflows/upkeep.yml)).
+   It runs on `repository_dispatch` (`sdk-release`) and uses this repo as an Action (`uses: dshak1/upkeep@<ref>`).
+2. The Action applies the provider's migration spec (`specs/*.json`), installs, runs your build and your tests, and
+   opens a pull request only if they pass. If they fail it opens an issue for a human instead.
+3. `upkeep watch` follows the provider and tells every repo with Upkeep installed, within seconds of a release:
+
+```sh
+node src/cli.ts watch --github dshak1/upkeep-demo-sdk --discover dshak1        # GitHub releases of the provider
+node src/cli.ts watch --npm @hexclave/next,@stackframe/stack --discover dshak1  # npm's public change feed
+```
+
+The watcher uses your local `gh` login, so no token is stored in any repo.

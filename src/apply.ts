@@ -258,7 +258,7 @@ export function applySpec(dir: string, spec: Spec, opts: ApplyOptions = {}): App
       if (write) writeFileSync(path, out);
     }
   }
-  rep.envNames = [...env].sort();
+  rep.envNames = [...env].filter((n) => !(n in spec.identifiers.map)).sort(); // an SDK constant is not an env var
   return rep;
 }
 
