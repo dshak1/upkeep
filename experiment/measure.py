@@ -40,7 +40,8 @@ def first_error(app, run_id):
         log = gh("run", "view", str(run_id), "-R", app, "--log-failed")
     except RuntimeError:
         return ""
-    for pat in (r"error TS\d+: .*", r"SyntaxError: .*", r"Error: .*"):
+    log = re.sub(r"\x1b\[[0-9;]*m", "", log)
+    for pat in (r"error TS\d+: .*", r"Export \w+ doesn't exist in target module", r"SyntaxError: .*", r"Error: .*"):
         m = re.search(pat, log)
         if m:
             return m.group(0).strip()[:160]

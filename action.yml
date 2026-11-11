@@ -104,13 +104,14 @@ runs:
         body="$RUNNER_TEMP/upkeep-pr.md"
         run_url="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
         if [ "$OK" = "true" ] && [ "$CHECKC" = "0" ]; then
+          sed -i '/^- Type check: see the results table in the Upkeep README/d' "$body"
           {
             echo
             echo "## Verified in this repo, before opening this PR"
             echo
             echo "- Build \`$BUILD\`: pass"
             echo "- Test \`$TEST\`: pass"
-            echo "- Check C (no old package, old name or old host left): pass"
+            echo "- No old package name, old function name or old API host left in the code: pass"
             echo "- Run: $run_url"
             echo
             echo "Opened by [Upkeep](https://github.com/dshak1/upkeep)${RELEASE:+ on release $RELEASE}. Nothing changes until a human merges."

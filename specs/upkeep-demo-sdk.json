@@ -1,17 +1,24 @@
 {
-  "provider": "upkeep-demo-sdk (Stack renamed to Hexclave, the same way Hexclave renamed Stack Auth)",
+  "provider": "upkeep-demo-sdk",
   "guide": {
     "url": "https://github.com/dshak1/upkeep-demo-sdk/blob/v2/MIGRATION.md",
     "commit": "v2"
   },
   "oldScope": "@upkeep-demo/stack",
   "packages": {
-    "@upkeep-demo/stack": { "to": "@upkeep-demo/hexclave", "source": "guide L3" }
+    "@upkeep-demo/stack": {
+      "to": "@upkeep-demo/hexclave",
+      "source": "guide L3"
+    }
   },
   "humanOnlyPackages": {},
   "version": "git+ssh://git@github.com/dshak1/upkeep-demo-sdk.git#v2.0.0",
   "fallbackVersion": "git+ssh://git@github.com/dshak1/upkeep-demo-sdk.git#v2.0.0",
-  "frozen": { "version": "1.0.0", "lastRelease": "v1.0.0", "source": "git tags of dshak1/upkeep-demo-sdk" },
+  "frozen": {
+    "version": "1.0.0",
+    "lastRelease": "v1.0.0",
+    "source": "git tags of dshak1/upkeep-demo-sdk"
+  },
   "identifiers": {
     "source": "guide L4 (\"All Stack* references are renamed to Hexclave*\") and the table at L6 to L15",
     "map": {
@@ -26,11 +33,20 @@
   },
   "hosts": {
     "source": "guide L17",
-    "map": { "https://api.stack.example.com": "https://api.hexclave.example.com" }
+    "map": {
+      "https://api.stack.example.com": "https://api.hexclave.example.com"
+    }
   },
   "optional": {
-    "headers": { "source": "guide L18", "from": "X-Stack-", "to": "X-Hexclave-" },
-    "env": { "source": "guide L19", "pattern": "\\b(?:NEXT_PUBLIC_)?STACK_[A-Z0-9_]+\\b" }
+    "headers": {
+      "source": "guide L18",
+      "from": "X-Stack-",
+      "to": "X-Hexclave-"
+    },
+    "env": {
+      "source": "guide L19",
+      "pattern": "\\b(?:NEXT_PUBLIC_)?STACK_[A-Z0-9_]+\\b"
+    }
   },
   "notes": [
     "Env vars were not renamed. v2 reads HEXCLAVE_* first, then the old STACK_* names (guide L19), so the deploy keeps working. Rename them here and in your host together."
