@@ -18,13 +18,13 @@ export function table(rows: Row[]): string {
     `**${moved.length} of ${counted.length}** repos that type-checked before the move still type-check after it, with no old package import or old name left (Check C). ` +
     `${rs.length} repos attempted; ${rs.length - counted.length} were not counted because they were red, had no type check or failed to install before Upkeep touched them.`,
     '',
-    '| Repo | Commit | Manager | Old version | Type check before | Type check after | Build before | Build after | Check C | Files changed | Lines +/- | Left for a human | Verdict |',
-    '|---|---|---|---|---|---|---|---|---|---|---|---|---|',
+    '| Repo | Commit | Manager | Old version | Type check before | Type check after | Build before | Build after | Check C | Files changed | Lines +/- | Left for a human | Guard | Verdict |',
+    '|---|---|---|---|---|---|---|---|---|---|---|---|---|---|',
   ];
   const order = (r: Row) => (r.verdict.startsWith('moved') ? 0 : r.verdict === 'partial' ? 1 : r.verdict === 'red after' ? 2 : 3);
   const body = rs.sort((a, b) => order(a) - order(b) || a.repo.localeCompare(b.repo)).map((r) => {
     const after = r.retry?.typecheck?.ok ? `${cell(r.after?.typecheck)}; green at ${r.retry.version}` : cell(r.after?.typecheck);
-    return `| [${r.repo}](https://github.com/${r.repo}) | \`${r.commit.slice(0, 7)}\` | ${r.manager} | ${Object.values(r.oldVersions).join(', ') || 'n/a'} | ${cell(r.before.typecheck)} | ${r.after ? after : 'not run'} | ${cell(r.before.build)} | ${cell(r.after?.build)} | ${r.checkC ? (r.checkC.pass ? 'pass' : 'fail') : 'not run'} | ${r.change?.files ?? ''} | ${r.change ? `+${r.change.added} / -${r.change.removed}` : ''} | ${r.after ? r.human : ''} | ${r.verdict} |`;
+    return `| [${r.repo}](https://github.com/${r.repo}) | \`${r.commit.slice(0, 7)}\` | ${r.manager} | ${Object.values(r.oldVersions).join(', ') || 'n/a'} | ${cell(r.before.typecheck)} | ${r.after ? after : 'not run'} | ${cell(r.before.build)} | ${cell(r.after?.build)} | ${r.checkC ? (r.checkC.pass ? 'pass' : 'fail') : 'not run'} | ${r.change?.files ?? ''} | ${r.change ? `+${r.change.added} / -${r.change.removed}` : ''} | ${r.after ? r.human : ''} | ${r.guard ? (r.guard.passes ? 'added, passes' : 'added, fails') : ''} | ${r.verdict} |`;
   });
   return [...head, ...body].join('\n');
 }

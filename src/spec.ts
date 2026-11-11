@@ -9,6 +9,7 @@ export interface Spec {
   humanOnlyPackages: Record<string, string>;
   version: string;
   fallbackVersion: string;
+  frozen: { version: string; lastRelease: string; source: string };
   identifiers: { source: string; map: Record<string, string> };
   hosts: { source: string; map: Record<string, string> };
   optional: { headers: { source: string; from: string; to: string }; env: { source: string; pattern: string } };

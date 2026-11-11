@@ -6,6 +6,8 @@ import { dirname, join, resolve } from 'node:path';
 import { applySpec, type ApplyReport } from './apply.ts';
 import { checkC, type CheckC } from './checkc.ts';
 import { prBody } from './pr.ts';
+import { classify } from './files.ts';
+import { writeGuard } from './guard.ts';
 import type { Spec } from './spec.ts';
 
 const ROOT = resolve(dirname(new URL(import.meta.url).pathname), '..');
@@ -23,6 +25,7 @@ export interface Row {
   checkC: Omit<CheckC, 'humanOnly'> & { humanOnly: number } | null;
   change: { files: number; added: number; removed: number; lockfileChanged: boolean } | null;
   human: number; envNames: string[];
+  guard?: { files: string[]; passes: boolean } | null;
   verdict: 'moved' | 'moved at fallback version' | 'partial' | 'red after' | 'not counted (red before)' | 'not counted (no type check)' | 'not counted (install failed)';
 }
 
@@ -138,7 +141,22 @@ export function runTarget(t: Target, o: RunOptions): Row {
   else if (!row.versionLanded || !buildOk) row.verdict = 'red after';
   else if (!c.pass) row.verdict = 'partial';
   else row.verdict = row.versionLanded === o.spec.version ? 'moved' : 'moved at fallback version';
+  if (row.verdict !== 'red after' && row.verdict !== 'not counted (red before)') row.guard = addGuard(aRoot, o.spec, row, rep);
   return done(row);
+}
+
+// (a) the verified block in the repo's agent instructions, (b) the CI guard; then the guard is run once on the moved tree.
+export function addGuard(root: string, spec: Spec, row: Row, rep: ApplyReport): { files: string[]; passes: boolean } {
+  const allow = [...new Set(rep.human.filter((h) => classify(h.file) === 'never').map((h) => h.file))];
+  const bothGreen = (a: StepResult | null | undefined, b: StepResult | null | undefined) => (a?.ok && b?.ok ? 'green before and after' : null);
+  const files = writeGuard(root, spec, {
+    date: new Date().toISOString().slice(0, 10), typecheck: 'green before and after',
+    build: bothGreen(row.before.build, row.after?.build), versionLanded: row.versionLanded ?? spec.version, envNames: row.envNames, allow,
+  });
+  spawnSync('git', ['-C', root, 'add', '-A'], { encoding: 'utf8' });
+  const g = spawnSync('bash', ['.github/upkeep-guard.sh'], { cwd: root, encoding: 'utf8', timeout: 120_000 });
+  writeFileSync(join(root, '..', 'guard.log'), `${g.stdout ?? ''}${g.stderr ?? ''}\nexit ${g.status}\n`);
+  return { files, passes: g.status === 0 };
 }
 
 export function readResults(path: string): Row[] {

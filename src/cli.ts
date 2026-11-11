@@ -2,15 +2,19 @@
 // upkeep apply <dir> [--swap-only] [--dry-run]   move one checkout and print what changed and what is left
 // upkeep check <dir>                             Check C on a checkout
 // upkeep run <targets.tsv> [--build] [--only owner/repo]   the harness: before and after, rows to runs/results.jsonl
+// upkeep targets [--since 2026-08-01]                  find public repos still on the old packages
+// upkeep guard-rows                              add the agent block and CI guard to moved repos from earlier runs
 // upkeep report                                  regenerate the README table from runs/results.jsonl
 import { readFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { homedir } from 'node:os';
 import { applySpec } from './apply.ts';
 import { checkC } from './checkc.ts';
-import { readResults, runTarget, type Target } from './run.ts';
+import { addGuard, readResults, runTarget, type Row, type Target } from './run.ts';
+import { appendFileSync, existsSync } from 'node:fs';
 import { writeReadme } from './report.ts';
 import { loadSpec } from './spec.ts';
+import { findTargets, writeTargets } from './targets.ts';
 
 const ROOT = resolve(dirname(new URL(import.meta.url).pathname), '..');
 const args = process.argv.slice(2);
@@ -48,6 +52,27 @@ if (cmd === 'apply' && target) {
     console.log(`run  ${t.repo} ${t.dir}`);
     const r = runTarget(t, { cache: join(base, 'cache'), work: join(base, 'work'), logs: join(base, 'logs'), results: RESULTS, build: flag('--build'), spec });
     console.log(`     ${r.verdict}  before ${r.before.typecheck?.ok ? 'green' : 'red'}  after ${r.after?.typecheck?.ok ? 'green' : r.after ? 'red' : 'not run'}  checkC ${r.checkC?.pass ?? '-'}  files ${r.change?.files ?? '-'}`);
+  }
+  writeReadme(join(ROOT, 'README.md'), readResults(RESULTS));
+} else if (cmd === 'targets') {
+  const o = { since: opt('--since') ?? '2026-08-01', maxMb: Number(opt('--max-mb') ?? 150), pages: Number(opt('--pages') ?? 10) };
+  const found = findTargets(spec, o);
+  const out = opt('--out') ?? join(ROOT, 'targets/hexclave-search.tsv');
+  writeTargets(out, found, o);
+  console.log(`${found.all} repos found, ${found.kept.length} kept -> ${out}`);
+} else if (cmd === 'guard-rows') {
+  // Adds the agent block and the CI guard to moved repos from runs made before the guard step existed.
+  const base = opt('--work-root') ?? join(homedir(), 'work/upkeep-runs');
+  const latest = new Map<string, Row>();
+  for (const r of readResults(RESULTS)) latest.set(r.id, r);
+  for (const r of latest.values()) {
+    if (r.guard || r.verdict === 'red after' || r.verdict.startsWith('not counted')) continue;
+    const root = join(base, 'work', r.id, 'after');
+    const applyJson = join(base, 'work', r.id, 'apply.json');
+    if (!existsSync(root) || !existsSync(applyJson)) continue;
+    const g = addGuard(root, spec, r, JSON.parse(readFileSync(applyJson, 'utf8')));
+    appendFileSync(RESULTS, JSON.stringify({ ...r, guard: g }) + '\n');
+    console.log(`${r.repo}: guard ${g.passes ? 'passes' : 'FAILS'} (${g.files.join(', ')})`);
   }
   writeReadme(join(ROOT, 'README.md'), readResults(RESULTS));
 } else if (cmd === 'report') {

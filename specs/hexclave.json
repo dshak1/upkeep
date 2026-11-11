@@ -6,18 +6,41 @@
   },
   "oldScope": "@stackframe/",
   "packages": {
-    "@stackframe/stack": { "to": "@hexclave/next", "source": "guide L22" },
-    "@stackframe/react": { "to": "@hexclave/react", "source": "guide L23" },
-    "@stackframe/js": { "to": "@hexclave/js", "source": "guide L24" },
-    "@stackframe/stack-shared": { "to": "@hexclave/shared", "source": "not in the guide: npm registry, same release line" },
-    "@stackframe/stack-ui": { "to": "@hexclave/ui", "source": "not in the guide: npm registry, same release line" },
-    "@stackframe/stack-sc": { "to": "@hexclave/sc", "source": "not in the guide: npm registry, same release line" }
+    "@stackframe/stack": {
+      "to": "@hexclave/next",
+      "source": "guide L22"
+    },
+    "@stackframe/react": {
+      "to": "@hexclave/react",
+      "source": "guide L23"
+    },
+    "@stackframe/js": {
+      "to": "@hexclave/js",
+      "source": "guide L24"
+    },
+    "@stackframe/stack-shared": {
+      "to": "@hexclave/shared",
+      "source": "not in the guide: npm registry, same release line"
+    },
+    "@stackframe/stack-ui": {
+      "to": "@hexclave/ui",
+      "source": "not in the guide: npm registry, same release line"
+    },
+    "@stackframe/stack-sc": {
+      "to": "@hexclave/sc",
+      "source": "not in the guide: npm registry, same release line"
+    }
   },
   "humanOnlyPackages": {
     "@stackframe/init-stack": "No @hexclave equivalent on npm. The CLI is now `hexclave` in @hexclave/cli (guide L49)."
   },
   "version": "^1.0.136",
   "fallbackVersion": "1.0.0",
+  "frozen": {
+    "version": "2.8.108",
+    "lastRelease": "2026-05-26",
+    "source": "npm registry, read 2026-11-11"
+  },
   "identifiers": {
     "source": "guide L26 (\"all Stack* references are renamed to Hexclave*\"), checked against the dist/index.d.ts exports of @stackframe/stack, /react, /js 2.8.108 and @hexclave/next, /react, /js 1.0.136",
     "map": {
@@ -42,15 +65,29 @@
   },
   "hosts": {
     "source": "guide L40",
-    "map": { "https://api.stack-auth.com": "https://api.hexclave.com" }
+    "map": {
+      "https://api.stack-auth.com": "https://api.hexclave.com"
+    }
   },
   "optional": {
-    "headers": { "source": "guide L46", "from": "X-Stack-", "to": "X-Hexclave-" },
-    "env": { "source": "guide L47", "pattern": "\\b(?:NEXT_PUBLIC_|VITE_)?STACK_[A-Z0-9_]+\\b" }
+    "headers": {
+      "source": "guide L46",
+      "from": "X-Stack-",
+      "to": "X-Hexclave-"
+    },
+    "env": {
+      "source": "guide L47",
+      "pattern": "\\b(?:NEXT_PUBLIC_|VITE_)?STACK_[A-Z0-9_]+\\b"
+    }
   },
   "notes": [
     "Passkeys are scoped to the domain where they were registered and are not transferred between the two domains (guide L50). Users who signed in with a passkey register it again.",
     "Env vars were not renamed. The new SDK reads HEXCLAVE_* first, then the old STACK_* names (dist/generated/env.js in @hexclave/next 1.0.136), so the deploy keeps working. Rename them here and in your host together, or leave both (guide L47).",
     "OAuth callback URLs on api.stack-auth.com keep working. Only a provider recreated on the dashboard needs the new callback URL (guide L72 to L76)."
-  ]
+  ],
+  "newDocs": {
+    "next": "@hexclave/next",
+    "react": "@hexclave/react",
+    "js": "@hexclave/js"
+  }
 }
