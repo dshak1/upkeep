@@ -1,5 +1,8 @@
 # Upkeep
 
+When a library your app uses changes, Upkeep opens a pull request that fixes your code, only if your own build and tests
+still pass.
+
 Upkeep moves the public repos that are still on a provider's old SDK to its new one, and proves each move with the
 repo's own type check and build, run before and after.
 
