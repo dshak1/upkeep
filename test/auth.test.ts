@@ -9,7 +9,7 @@ import { after, before, test } from 'node:test';
 import { callbackUrl, checkSession, login as siteLogin, pilotList, sign } from '../site/lib/token.ts';
 
 const SECRET = 'test-secret-not-real';
-const PILOTS = 'pilot@example.com';
+const PILOTS = 'pilot@example.com:code-1';
 let now = Date.now();
 let server: Server;
 let auth: typeof import('../src/auth.ts');
@@ -44,7 +44,7 @@ test('allowed: the login loop saves a token, then run and init pass the gate', a
   const s = await auth.login({
     open: async (url) => {
       const u = new URL(url);
-      const token = siteLogin('Pilot@Example.com', SECRET, pilotList(PILOTS), now)!;
+      const token = siteLogin('Pilot@Example.com', 'code-1', SECRET, pilotList(PILOTS), now)!;
       const cb = callbackUrl(u.searchParams.get('port'), u.searchParams.get('state'), token)!;
       await fetch(cb);
     },

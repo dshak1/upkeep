@@ -5,20 +5,27 @@ import { test } from "node:test"
 import { callbackUrl, checkSession, login, pilotList, sign, verify } from "../lib/token.ts"
 
 const SECRET = "test-secret-not-real"
-const PILOTS = pilotList(" Pilot@Example.com , other@example.com")
+const PILOTS = pilotList(" Pilot@Example.com:code-1 , other@example.com:code-2, nocode@example.com")
 const NOW = Date.UTC(2026, 10, 11, 13, 0, 0)
 
-test("allowed: a pilot's email gets a token that verifies", () => {
-  const t = login("pilot@example.com", SECRET, PILOTS, NOW)
+test("allowed: a pilot's email and code get a token that verifies", () => {
+  const t = login("pilot@example.com", " code-1 ", SECRET, PILOTS, NOW)
   assert.ok(t)
   const v = verify(t, SECRET, PILOTS, NOW + 1000)
   assert.deepEqual(v.ok && v.email, "pilot@example.com")
-  assert.equal(checkSession(`Bearer ${t}`, { secret: SECRET, pilots: "pilot@example.com" }, NOW).ok, true)
+  assert.equal(checkSession(`Bearer ${t}`, { secret: SECRET, pilots: "pilot@example.com:code-1" }, NOW).ok, true)
 })
 
 test("refused: an email not on the pilot list gets no token", () => {
-  assert.equal(login("stranger@example.com", SECRET, PILOTS, NOW), null)
-  assert.equal(login("", SECRET, PILOTS, NOW), null)
+  assert.equal(login("stranger@example.com", "code-1", SECRET, PILOTS, NOW), null)
+  assert.equal(login("", "", SECRET, PILOTS, NOW), null)
+})
+
+test("refused: a pilot's email with the wrong code, another pilot's code, or no code on file", () => {
+  assert.equal(login("pilot@example.com", "", SECRET, PILOTS, NOW), null)
+  assert.equal(login("pilot@example.com", "guess", SECRET, PILOTS, NOW), null)
+  assert.equal(login("pilot@example.com", "code-2", SECRET, PILOTS, NOW), null)
+  assert.equal(login("nocode@example.com", "", SECRET, PILOTS, NOW), null)
 })
 
 test("refused: a token signed with another secret, edited, or missing", () => {
@@ -33,7 +40,7 @@ test("refused: a token signed with another secret, edited, or missing", () => {
 
 test("refused: a pilot taken off the list loses access with the same token", () => {
   const t = sign("other@example.com", SECRET, NOW)
-  assert.deepEqual(verify(t, SECRET, pilotList("pilot@example.com"), NOW), { ok: false, reason: "not a pilot" })
+  assert.deepEqual(verify(t, SECRET, pilotList("pilot@example.com:code-1"), NOW), { ok: false, reason: "not a pilot" })
 })
 
 test("expired: a token past its 30 days is refused", () => {

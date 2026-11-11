@@ -6,6 +6,7 @@ export const dynamic = "force-dynamic"
 export async function POST(req: Request) {
   const form = await req.formData()
   const email = String(form.get("email") ?? "")
+  const code = String(form.get("code") ?? "")
   const port = form.get("port") as string | null
   const state = form.get("state") as string | null
   const back = new URL("/login", req.url)
@@ -13,7 +14,7 @@ export async function POST(req: Request) {
   if (state) back.searchParams.set("state", state)
 
   const secret = process.env.UPKEEP_SESSION_SECRET ?? ""
-  const token = secret ? login(email, secret, pilotList(process.env.UPKEEP_PILOTS)) : null
+  const token = secret ? login(email, code, secret, pilotList(process.env.UPKEEP_PILOTS)) : null
   if (!token) {
     back.searchParams.set("denied", "1")
     return Response.redirect(back, 303)

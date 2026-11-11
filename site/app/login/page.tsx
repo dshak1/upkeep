@@ -34,12 +34,24 @@ export default async function Login({ searchParams }: { searchParams: Search }) 
             autoFocus
             className="h-11 rounded-[8px] border border-hairline bg-paper px-3 text-[15px] outline-none transition-shadow focus:border-accent/60 focus:shadow-[0_0_0_3px_rgb(47_92_255/0.15)]"
           />
+          <label htmlFor="code" className="mt-2 text-[13px] text-ink-muted">
+            Your pilot code, from the note you got after paying
+          </label>
+          <input
+            id="code"
+            name="code"
+            type="text"
+            required
+            autoComplete="one-time-code"
+            spellCheck={false}
+            className="lp-mono h-11 rounded-[8px] border border-hairline bg-paper px-3 text-[15px] outline-none transition-shadow focus:border-accent/60 focus:shadow-[0_0_0_3px_rgb(47_92_255/0.15)]"
+          />
           <Pill type="submit" kind="utility" tone="accent" className="mt-2 w-full">
             Log in
           </Pill>
           {denied ? (
             <p role="alert" className="mt-2 text-center text-[14px] leading-[1.6] text-ink-muted">
-              That email has no pilot yet.{" "}
+              That email and code do not match a pilot.{" "}
               {PILOT ? (
                 <a href={PILOT} className="text-accent underline underline-offset-2">
                   Start one for $49

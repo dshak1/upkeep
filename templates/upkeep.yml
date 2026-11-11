@@ -19,5 +19,3 @@ jobs:
       - uses: dshak1/upkeep@main
         with:
           spec: hexclave
-        env:
-          UPKEEP_TOKEN: ${{ secrets.UPKEEP_TOKEN }}

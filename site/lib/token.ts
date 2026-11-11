@@ -1,6 +1,6 @@
 // The pilot gate, server side. A token is base64url(JSON {email, exp}) + "." + base64url(HMAC-SHA256 of that part).
 // The secret never leaves the server; the CLI asks /api/session whether its token is still good.
-import { createHmac, timingSafeEqual } from "node:crypto"
+import { createHash, createHmac, timingSafeEqual } from "node:crypto"
 
 export const TOKEN_DAYS = 30
 
@@ -8,10 +8,25 @@ export type Verdict = { ok: true; email: string; exp: number } | { ok: false; re
 
 export const normalEmail = (e: string) => e.trim().toLowerCase()
 
-/** UPKEEP_PILOTS is a comma separated list of emails, set after each payment. */
-export function pilotList(env: string | undefined): Set<string> {
-  return new Set((env ?? "").split(",").map(normalEmail).filter((e) => e.includes("@")))
+/**
+ * UPKEEP_PILOTS is a comma separated list of `email:code`, one per payment. The code is made by us when the payment
+ * lands and given only to the buyer, so knowing a pilot's email is not enough to log in as them.
+ */
+export type Pilots = { has(email: string): boolean; code(email: string): string | undefined }
+
+export function pilotList(env: string | undefined): Pilots {
+  const m = new Map<string, string>()
+  for (const entry of (env ?? "").split(",")) {
+    const i = entry.lastIndexOf(":")
+    const email = normalEmail(i > 0 ? entry.slice(0, i) : entry)
+    const code = i > 0 ? entry.slice(i + 1).trim() : ""
+    if (email.includes("@")) m.set(email, code)
+  }
+  return { has: (e) => m.has(e), code: (e) => m.get(e) || undefined }
 }
+
+const sameCode = (a: string, b: string) =>
+  timingSafeEqual(createHash("sha256").update(a).digest(), createHash("sha256").update(b).digest())
 
 const mac = (body: string, secret: string) => createHmac("sha256", secret).update(body).digest("base64url")
 
@@ -22,7 +37,7 @@ export function sign(email: string, secret: string, now = Date.now(), days = TOK
 }
 
 /** Signature, expiry, and the email still on the pilot list. */
-export function verify(token: string | undefined, secret: string, pilots: Set<string>, now = Date.now()): Verdict {
+export function verify(token: string | undefined, secret: string, pilots: Pilots, now = Date.now()): Verdict {
   if (!token) return { ok: false, reason: "missing" }
   if (!secret) return { ok: false, reason: "bad" }
   const [body, sig, extra] = token.split(".")
@@ -42,10 +57,11 @@ export function verify(token: string | undefined, secret: string, pilots: Set<st
   return { ok: true, email: claim.email, exp: claim.exp }
 }
 
-/** The login step: a token for a pilot, nothing for anyone else. */
-export function login(email: string, secret: string, pilots: Set<string>, now = Date.now()): string | null {
+/** The login step: a token for a pilot who has their code, nothing for anyone else. */
+export function login(email: string, code: string, secret: string, pilots: Pilots, now = Date.now()): string | null {
   const e = normalEmail(email)
-  if (!e.includes("@") || !pilots.has(e)) return null
+  const want = pilots.code(e)
+  if (!e.includes("@") || !want || !sameCode(code.trim(), want)) return null
   return sign(e, secret, now)
 }
 
