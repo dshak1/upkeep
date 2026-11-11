@@ -118,7 +118,7 @@ export function SetupSwitch({ actionLine, cliLine }: { actionLine: string; cliLi
         role="tablist"
         aria-label="How to install"
         onKeyDown={onKey}
-        className="inline-flex h-9 items-stretch gap-[2px] rounded-[7px] border border-[#dfdfdf] bg-[#f4f4f6] p-[3px]"
+        className="inline-flex h-9 items-stretch gap-[2px] rounded-[7px] border border-hairline bg-paper-raised p-[3px]"
       >
         {TABS.map((t, i) => (
           <button
@@ -134,7 +134,7 @@ export function SetupSwitch({ actionLine, cliLine }: { actionLine: string; cliLi
             tabIndex={who === t.id ? 0 : -1}
             onClick={() => pick(t.id)}
             className={`flex h-7 items-center rounded-[4px] px-[11px] text-[12px] transition-[background-color,color,box-shadow] duration-150 ${
-              who === t.id ? "bg-white font-semibold text-[#0b1015] shadow-[0_1px_3px_rgba(11,16,21,0.12)]" : "font-normal text-[rgba(11,16,21,0.68)] hover:text-[#0b1015]"
+              who === t.id ? "bg-[#232b34] font-semibold text-ink shadow-[0_1px_3px_rgba(0,0,0,0.4)]" : "font-normal text-ink-muted hover:text-ink"
             }`}
           >
             {t.label}
@@ -162,7 +162,7 @@ export function SetupSwitch({ actionLine, cliLine }: { actionLine: string; cliLi
       <p className="mt-3 text-[13px] leading-[1.6] text-ink-muted">{tab.note}</p>
 
       <div className="mt-6 flex justify-center">
-        <Pill kind="setup" tone="ink" onClick={copy} icon={who === "action" ? <Branch /> : <Prompt />} trailing={<CopyGlyph done={copied === who} />}>
+        <Pill kind="setup" tone="accent" onClick={copy} icon={who === "action" ? <Branch /> : <Prompt />} trailing={<CopyGlyph done={copied === who} />}>
           {copied === who ? "Copied" : tab.copy}
         </Pill>
       </div>

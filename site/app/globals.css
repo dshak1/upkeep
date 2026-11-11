@@ -1,18 +1,26 @@
 @import "tailwindcss";
 
 @theme {
-  --color-paper: #ffffff;
-  --color-paper-raised: #fafafa;
-  --color-ink: #0a0a0a;
-  --color-ink-muted: #6b6b6b;
-  --color-hairline: #e5e5e5;
-  --color-accent: #2f5cff;
-  --color-accent-soft: #eef1ff;
+  /* Upkeep brand (brand/BRAND.md), dark: the page is Ink, text is Paper. "paper" is the background token and
+     "ink" the text token, so the components copied from Rema keep their class names. */
+  --color-paper: #0c1116;
+  --color-paper-raised: #121920;
+  --color-ink: #f5f2ea;
+  --color-ink-muted: #a9b3bf;
+  --color-slate: #5b6573;
+  --color-hairline: #232b34;
+  /* The one loud accent: buttons people click often (Diar, 2026-11-11). */
+  --color-accent: #3d6bff;
+  --color-accent-soft: #1a2a5c;
+  /* Only for a check that actually passed. */
+  --color-proof: #22d47b;
+  /* The old SDK. */
+  --color-frozen: #f2a93b;
 }
 
 @layer base {
   html {
-    color-scheme: light;
+    color-scheme: dark;
     background: var(--color-paper);
     color: var(--color-ink);
   }
@@ -20,7 +28,7 @@
     min-height: 100vh;
     background: var(--color-paper);
     color: var(--color-ink);
-    font-family: "Mona Sans Variable", "IBM Plex Sans", "Segoe UI", sans-serif;
+    font-family: "Inter Variable", "Inter", "Segoe UI", sans-serif;
     font-optical-sizing: auto;
     -webkit-font-smoothing: antialiased;
   }
@@ -34,7 +42,9 @@
   --ease-soft: cubic-bezier(0.25, 1, 0.5, 1);
   --ease-reveal: cubic-bezier(0.22, 0.61, 0.36, 1);
 }
-.lp-mono { font-family: "DM Mono", "IBM Plex Mono", ui-monospace, monospace; }
+.lp-mono { font-family: "JetBrains Mono Variable", "JetBrains Mono", ui-monospace, monospace; }
+/* Headlines: Inter's display cut (optical size follows the font size), bold, -2% tracking. */
+.display { font-family: "Inter Variable", "Inter", sans-serif; font-optical-sizing: auto; font-weight: 700; letter-spacing: -0.02em; }
 
 /* Words come in one by one, 65 ms apart, a tenth of an em of blur (Rema's reveal). */
 .up-word {
@@ -53,4 +63,14 @@
 }
 @media (prefers-reduced-motion: reduce) {
   .up-word, .up-rise { animation: none; }
+}
+
+/* The pull request card: rises in, then each check enters from above, 380 ms apart, then "Ready to merge". */
+.pr-card { animation: up-rise 0.8s cubic-bezier(0.22, 0.61, 0.36, 1) 0.7s both; }
+.pr-check { animation: pr-in 0.6s cubic-bezier(0.6, 0, 0.15, 1) both; animation-delay: calc(1.3s + var(--i, 0) * 380ms); }
+.pr-ready { animation: pr-fade 0.5s ease both; animation-delay: 2.6s; }
+@keyframes pr-in { from { opacity: 0; transform: translateY(-0.6em); } to { opacity: 1; transform: none; } }
+@keyframes pr-fade { from { opacity: 0; } to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) {
+  .pr-card, .pr-check, .pr-ready { animation: none; }
 }

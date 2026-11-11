@@ -1,8 +1,7 @@
 import type { Metadata, Viewport } from "next"
 
-import "@fontsource-variable/mona-sans"
-import "@fontsource/dm-mono/400.css"
-import "@fontsource/dm-mono/500.css"
+import "@fontsource-variable/inter/opsz.css"
+import "@fontsource-variable/jetbrains-mono"
 import "./globals.css"
 
 export const metadata: Metadata = {
@@ -11,7 +10,7 @@ export const metadata: Metadata = {
     "When a library your app uses changes, Upkeep automatically opens a pull request that fixes your code, and only if your own tests still pass.",
 }
 
-export const viewport: Viewport = { themeColor: "#ffffff" }
+export const viewport: Viewport = { themeColor: "#0c1116" }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (

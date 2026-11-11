@@ -3,7 +3,7 @@ import type { AnchorHTMLAttributes, ButtonHTMLAttributes, CSSProperties, ReactNo
 import { cn } from "@/lib/cn"
 
 type Kind = "utility" | "setup" | "social"
-type Tone = "ink" | "paper" | "veil"
+type Tone = "ink" | "paper" | "veil" | "accent"
 
 const EASE = "cubic-bezier(.25, 1, .5, 1)"
 const OVERSHOOT = "cubic-bezier(.3, 1.8, .55, 1)"
@@ -19,6 +19,7 @@ const TONE: Record<Tone, string> = {
   paper:
     "bg-paper text-ink shadow-[0_0_0_1px_rgb(15_23_42/0.06),0_2px_4px_rgb(15_23_42/0.06),0_12px_14px_-8px_rgb(15_23_42/0.16)] hover:shadow-[0_0_0_1px_rgb(15_23_42/0.08),0_4px_8px_rgb(15_23_42/0.08),0_14px_14px_-6px_rgb(15_23_42/0.2)]",
   veil: "bg-paper/80 text-ink hover:bg-paper",
+  accent: "bg-accent text-white hover:bg-[#5580ff]",
 }
 
 /** Photon's hairline and glow, on the setup kind only. */
@@ -52,7 +53,7 @@ export function Pill(props: LinkProps | ButtonProps) {
     "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent motion-reduce:transition-none",
     ROLE[kind],
     TONE[tone],
-    kind === "setup" && tone === "ink" ? SETUP_EDGE : "",
+    kind === "setup" && (tone === "ink" || tone === "accent") ? SETUP_EDGE : "",
     className,
   )
   const body = (

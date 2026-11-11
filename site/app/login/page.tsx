@@ -9,10 +9,11 @@ export default async function Login({ searchParams }: { searchParams: Search }) 
   const fromCli = Boolean(port && state)
   return (
     <main className="lp flex min-h-screen flex-col items-center px-4 pt-28 sm:pt-36">
-      <a href="/" className="text-[17px] font-semibold tracking-[-0.02em]">
-        Upkeep<span className="text-accent">.</span>
+      <a href="/">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/brand/upkeep-lockup-on-dark.svg" alt="upkeep" width={106} height={28} className="h-7 w-auto" />
       </a>
-      <h1 className="mt-10 text-center text-[28px] font-semibold tracking-[-0.025em] sm:text-[34px]">Log in to the Upkeep CLI</h1>
+      <h1 className="display mt-10 text-center text-[30px] sm:text-[38px]">Log in to the Upkeep CLI</h1>
       {!fromCli || bad ? (
         <p className="mt-4 max-w-[40ch] text-center text-[15px] leading-[1.6] text-ink-muted">
           Start from your terminal: run <span className="lp-mono text-ink">npx github:dshak1/upkeep login</span>, and it opens this page.
@@ -31,9 +32,9 @@ export default async function Login({ searchParams }: { searchParams: Search }) 
             required
             autoComplete="email"
             autoFocus
-            className="h-11 rounded-[8px] border border-hairline bg-paper px-3 text-[15px] outline-none transition-shadow focus:border-ink/30 focus:shadow-[0_0_0_3px_rgb(47_92_255/0.15)]"
+            className="h-11 rounded-[8px] border border-hairline bg-paper px-3 text-[15px] outline-none transition-shadow focus:border-accent/60 focus:shadow-[0_0_0_3px_rgb(47_92_255/0.15)]"
           />
-          <Pill type="submit" kind="utility" tone="ink" className="mt-2 w-full">
+          <Pill type="submit" kind="utility" tone="accent" className="mt-2 w-full">
             Log in
           </Pill>
           {denied ? (
