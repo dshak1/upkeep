@@ -1,19 +1,32 @@
 import { headers } from "next/headers"
 
-import { CaseCharts } from "@/components/CaseCharts"
+import { ChartCards } from "@/components/ChartCards"
+import { InstallPill } from "@/components/InstallPill"
 import { Pill } from "@/components/Pill"
 import { PullRequestCard } from "@/components/PullRequestCard"
-import { SetupSwitch } from "@/components/SetupSwitch"
+import { VerbCycle } from "@/components/VerbCycle"
 import { CLI_LINE, actionLine } from "@/lib/install"
 import { loadResults } from "@/lib/results"
 import { siteFrom } from "@/lib/site"
 
-const HEADLINE = ["Libraries change.", "Your code keeps up."]
-const SUBLINE = "When a library you use changes, Upkeep opens the fix, only if your tests pass."
-
 function Mark() {
   // eslint-disable-next-line @next/next/no-img-element
   return <img src="/brand/upkeep-lockup-on-dark.svg" alt="upkeep" width={106} height={28} className="h-7 w-auto" />
+}
+
+function PilotButton({ url }: { url?: string }) {
+  return url ? (
+    <Pill href={url} kind="utility" tone="accent">
+      Start a founding pilot, $5
+    </Pill>
+  ) : (
+    <span className="inline-flex flex-col items-start gap-1.5">
+      <Pill kind="utility" tone="accent" disabled aria-disabled className="cursor-not-allowed opacity-45 hover:bg-accent">
+        Start a founding pilot, $5
+      </Pill>
+      <span className="lp-mono pl-1 text-[11.5px] text-ink-muted">Checkout opens tonight.</span>
+    </span>
+  )
 }
 
 export default async function Page() {
@@ -23,42 +36,49 @@ export default async function Page() {
 
   return (
     <main className="lp relative overflow-hidden">
-      <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[620px]">
+      <section aria-labelledby="hero-title" className="relative isolate flex min-h-[100svh] flex-col">
+        <video
+          aria-hidden
+          autoPlay
+          muted
+          loop
+          playsInline
+          preload="auto"
+          poster="/media/hero.jpg"
+          className="absolute inset-0 -z-20 h-full w-full object-cover"
+        >
+          <source src="/media/hero.webm" type="video/webm" />
+          <source src="/media/hero.mp4" type="video/mp4" />
+        </video>
         <div
-          className="absolute left-1/2 top-10 h-[520px] w-[min(900px,120vw)] -translate-x-1/2 rounded-[50%] blur-[10px]"
-          style={{ background: "radial-gradient(ellipse at center, rgb(61 107 255 / 0.22) 0%, rgb(34 212 123 / 0.06) 45%, transparent 72%)" }}
+          aria-hidden
+          className="absolute inset-0 -z-10"
+          style={{
+            background:
+              "linear-gradient(to top, #0c1116 0%, rgb(12 17 22 / 0.92) 22%, rgb(12 17 22 / 0.5) 55%, rgb(12 17 22 / 0.25) 100%), linear-gradient(to right, rgb(12 17 22 / 0.75) 0%, rgb(12 17 22 / 0.2) 60%, transparent 100%)",
+          }}
         />
-      </div>
 
-      <header className="mx-auto flex h-16 max-w-[1080px] items-center justify-between px-4 sm:px-8">
-        <Mark />
-        <a href="https://github.com/dshak1/upkeep" className="text-[14px] text-ink-muted transition-colors hover:text-ink">
-          GitHub
-        </a>
-      </header>
+        <header className="mx-auto flex h-16 w-full max-w-[1280px] items-center justify-between px-4 sm:px-10">
+          <Mark />
+          <a href="https://github.com/dshak1/upkeep" className="text-[14px] text-ink/80 transition-colors hover:text-ink">
+            GitHub
+          </a>
+        </header>
 
-      <section aria-labelledby="hero-title" className="px-4 pt-12 sm:px-8 sm:pt-20">
-        <div className="mx-auto max-w-[880px] text-center">
-          <h1 id="hero-title" className="display text-balance text-[44px] leading-[1.04] text-ink sm:text-[72px] lg:text-[88px]">
-            {HEADLINE.map((line, l) => (
-              <span key={l} className="block">
-                {line.split(" ").map((w, i) => (
-                  <span key={i}>
-                    <span className="up-word" style={{ ["--i" as string]: l * 2 + i }}>
-                      {w}
-                    </span>{" "}
-                  </span>
-                ))}
-              </span>
-            ))}
+        <div className="mx-auto mt-auto w-full max-w-[1280px] px-4 pb-12 sm:px-10 sm:pb-16">
+          <h1 id="hero-title" className="display max-w-[14ch] text-[48px] leading-[1.04] text-ink sm:text-[80px] lg:text-[104px]">
+            <span className="up-word block" style={{ ["--i" as string]: 0 }}>
+              Libraries <VerbCycle />
+            </span>
+            <span className="up-word block" style={{ ["--i" as string]: 3 }}>
+              Your code keeps up.
+            </span>
           </h1>
-          <p className="up-rise mx-auto mt-6 max-w-[36ch] text-pretty text-[18px] leading-[1.5] text-ink-muted sm:text-[21px]" style={{ ["--d" as string]: "300ms" }}>
-            {SUBLINE}
-          </p>
-        </div>
-
-        <div className="up-rise mx-auto mt-12 max-w-[640px] text-center" style={{ ["--d" as string]: "450ms" }}>
-          <SetupSwitch actionLine={actionLine(site)} cliLine={CLI_LINE} />
+          <div className="up-rise mt-9 flex flex-col items-start gap-4 lg:flex-row lg:items-start" style={{ ["--d" as string]: "450ms" }}>
+            <InstallPill actionLine={actionLine(site)} cliLine={CLI_LINE} />
+            <PilotButton url={pilotUrl} />
+          </div>
         </div>
       </section>
 
@@ -70,7 +90,7 @@ export default async function Page() {
       </section>
 
       <section aria-labelledby="case-title" className="px-4 pb-8 pt-24 sm:px-8 sm:pt-32">
-        <div className="mx-auto max-w-[1080px]">
+        <div className="mx-auto max-w-[1280px]">
           <p className="lp-mono text-[12px] uppercase tracking-[0.08em] text-frozen">The Hexclave case</p>
           <h2 id="case-title" className="display mt-4 max-w-[22ch] text-balance text-[32px] leading-[1.08] sm:text-[48px]">
             Hexclave renamed its SDK in May. Most of the code using it never moved.
@@ -81,7 +101,7 @@ export default async function Page() {
             nobody moves.
           </p>
           <div className="mt-12">
-            <CaseCharts results={results} />
+            <ChartCards results={results} />
           </div>
         </div>
       </section>
@@ -91,24 +111,13 @@ export default async function Page() {
           <h2 id="pilot-title" className="display text-balance text-[30px] leading-[1.12] sm:text-[40px]">
             One repo, one month, every fix as a pull request.
           </h2>
-          <div className="mt-8 flex flex-col items-center gap-3">
-            {pilotUrl ? (
-              <Pill href={pilotUrl} kind="utility" tone="accent">
-                Start a solo pilot, $49
-              </Pill>
-            ) : (
-              <>
-                <Pill kind="utility" tone="accent" disabled aria-disabled className="cursor-not-allowed opacity-45 hover:bg-accent">
-                  Start a solo pilot, $49
-                </Pill>
-                <span className="lp-mono text-[12px] text-ink-muted">Checkout opens tonight.</span>
-              </>
-            )}
+          <div className="mt-8 flex justify-center">
+            <PilotButton url={pilotUrl} />
           </div>
         </div>
       </section>
 
-      <footer className="mx-auto flex max-w-[1080px] items-center justify-between border-t border-hairline px-4 py-6 text-[13px] text-ink-muted sm:px-8">
+      <footer className="mx-auto flex max-w-[1280px] items-center justify-between border-t border-hairline px-4 py-6 text-[13px] text-ink-muted sm:px-8">
         <Mark />
         <span>Built in Taipei, November 2026</span>
       </footer>
