@@ -43,6 +43,8 @@ Everything you need to copy, paste and upload. Images are in `brand/social/` and
 | GitHub social preview, Product Hunt gallery, dev.to cover | `social/og.png` |
 | First post image | `social/card-hexclave__multi-tenant-starter-template.png` and `social/card-scoreboard.png` |
 
+Open every signup page at once: `bash brand/open-signups.sh` (on your own computer).
+
 ## The sprint, in order
 
 ### 0:10 to 0:45, tier 1: where developers will look for you
