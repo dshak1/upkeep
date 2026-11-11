@@ -35,8 +35,11 @@ your own tests still pass.
 3. `upkeep watch` follows the provider and tells every repo with Upkeep installed, within seconds of a release:
 
 ```sh
-node src/cli.ts watch --github dshak1/upkeep-demo-sdk --discover dshak1        # GitHub releases of the provider
-node src/cli.ts watch --npm @hexclave/next,@stackframe/stack --discover dshak1  # npm's public change feed
+node src/cli.ts watch --github dshak1/upkeep-demo-sdk --discover dshak1          # GitHub releases of the provider
+node src/cli.ts watch --npm @hexclave/next,@stackframe/stack --consumers you/your-app  # npm's public change feed
 ```
 
-The watcher uses your local `gh` login, so no token is stored in any repo.
+Point each watcher only at the repos that use that provider: `--discover` sends to every repo of the owner that has
+Upkeep installed. The watcher uses your local `gh` login, so no token is stored in any repo. The GitHub path ran in
+every timed run below; the npm path has been checked against the live feed (baseline read) but has not yet fired on a
+real release.
