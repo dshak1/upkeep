@@ -1,0 +1,21 @@
+{
+  "name": "upkeep",
+  "version": "0.1.0",
+  "description": "Moves the public repos still on a provider's old SDK to its new one, proved by each repo's own type check and build.",
+  "type": "module",
+  "private": true,
+  "license": "MIT",
+  "bin": { "upkeep": "src/cli.ts" },
+  "engines": { "node": ">=22.18" },
+  "scripts": {
+    "test": "node --test test/*.test.ts",
+    "typecheck": "tsc --noEmit",
+    "upkeep": "node src/cli.ts"
+  },
+  "dependencies": {
+    "typescript": "5.9.3"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0"
+  }
+}
