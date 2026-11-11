@@ -1,3 +1,5 @@
+<p><img src="brand/logo/upkeep-lockup.svg" alt="Upkeep" height="56"></p>
+
 # Upkeep
 
 Upkeep moves the public repos that are still on a provider's old SDK to its new one, and proves each move with the
