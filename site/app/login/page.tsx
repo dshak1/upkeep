@@ -54,7 +54,7 @@ export default async function Login({ searchParams }: { searchParams: Search }) 
               That email and code do not match a pilot.{" "}
               {PILOT ? (
                 <a href={PILOT} className="text-accent underline underline-offset-2">
-                  Start one for $49
+                  Start a founding pilot, $5
                 </a>
               ) : (
                 <a href="/" className="text-accent underline underline-offset-2">
