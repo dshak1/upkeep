@@ -23,8 +23,8 @@ function frames() {
 }
 
 const CSS = `
-.vc { --row: 1.25em; display: inline-block; vertical-align: bottom; height: var(--row); overflow: hidden; clip-path: inset(0); margin-bottom: -0.105em; }
-.vc-row { display: block; height: var(--row); line-height: var(--row); white-space: nowrap; }
+.vc { --row: 1.25em; display: inline-block; vertical-align: bottom; height: var(--row); overflow: hidden; clip-path: inset(0.14em 0 0 0); margin-bottom: -0.105em; }
+.vc-row { display: block; height: var(--row); line-height: var(--row); white-space: nowrap; text-align: left; }
 @keyframes vc-roll { ${frames()} }
 @media (prefers-reduced-motion: no-preference) {
   .vc-track { display: block; animation: vc-roll ${n * SLOT}s cubic-bezier(.65,0,.35,1) 1.4s infinite; will-change: transform; }
