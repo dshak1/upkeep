@@ -95,10 +95,11 @@ export function FlickeringGrid({
     ro.observe(box)
     const io = new IntersectionObserver(([e]) => {
       visible = e.isIntersecting
+      cancelAnimationFrame(raf)
       if (visible && !still) {
         last = performance.now()
         raf = requestAnimationFrame(tick)
-      } else cancelAnimationFrame(raf)
+      }
     })
     io.observe(canvas)
     return () => {
