@@ -12,19 +12,26 @@ type Row = {
 }
 
 export type Outcome = { key: string; label: string; value: number; color: string }
-export type Results = { total: number; outcomes: Outcome[]; starter?: { files?: number; buildGreen: boolean } }
+export type Results = { total: number; counted: number; outcomes: Outcome[]; starter?: { files?: number; buildGreen: boolean } }
 
 const URL_MAIN = "https://raw.githubusercontent.com/dshak1/upkeep/main/runs/results.jsonl"
 
 const KINDS: Record<string, { label: string; color: string; order: number }> = {
-  moved: { label: "Moved, and its own checks still pass", color: "#22d47b", order: 0 },
-  red: { label: "Its checks failed after the move, so no pull request", color: "#e5484d", order: 1 },
-  timeout: { label: "Stopped at our 6 minute limit", color: "#5b6573", order: 2 },
-  skipped: { label: "Not counted: already failing before we touched it", color: "#5b6573", order: 3 },
+  moved: { label: "Built before and after, none of the old package left", color: "#22d47b", order: 0 },
+  red: { label: "Build broke after the move, so no pull request", color: "#e5484d", order: 1 },
+  timeout: { label: "Not counted: stopped at our 6 minute limit", color: "#5b6573", order: 2 },
+  skipped: { label: "Not counted: its build already failed before", color: "#5b6573", order: 3 },
 }
 
+// The README's rule: a repo counts only if it built before Upkeep touched it.
 const kindOf = (r: Row) =>
-  r.verdict.startsWith("moved") ? "moved" : r.verdict === "red after" ? "red" : r.verdict === "timeout" ? "timeout" : "skipped"
+  r.verdict === "timeout"
+    ? "timeout"
+    : !r.before?.build?.ok
+      ? "skipped"
+      : r.after?.build?.ok && r.verdict.startsWith("moved")
+        ? "moved"
+        : "red"
 
 export function summarize(text: string): Results {
   const last = new Map<string, Row>()
@@ -46,6 +53,7 @@ export function summarize(text: string): Results {
   const s = rows.find((r) => r.repo === "hexclave/multi-tenant-starter-template")
   return {
     total: rows.length,
+    counted: outcomes.filter((o) => o.key === "moved" || o.key === "red").reduce((n, o) => n + o.value, 0),
     outcomes,
     starter: s ? { files: s.change?.files, buildGreen: Boolean(s.before?.build?.ok && s.after?.build?.ok) } : undefined,
   }

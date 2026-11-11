@@ -136,10 +136,10 @@ export function CaseCharts({ results }: { results: Results | null }) {
 
       <Row
         n="03 · tonight"
-        figure={results ? `${moved} of ${results.total}` : "Tonight"}
+        figure={results?.counted ? `${moved} of ${results.counted}` : "Tonight"}
         lead={
           results?.starter?.buildGreen
-            ? `repos Upkeep tried tonight moved with their own checks passing. One is Hexclave's own starter template: ${results.starter.files ?? "its"} files changed, its build green before and after.`
+            ? `repos that built before Upkeep still build after it, with none of the old package left (${results.total} tried tonight). One is Hexclave's own starter template.`
             : "Hexclave's own starter template moved to the new name, its build green before and after."
         }
         source={
