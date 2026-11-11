@@ -118,7 +118,7 @@ export function ChartCards({ results }: { results: Results | null }) {
           <CardTitle>Tonight&apos;s runs</CardTitle>
           <CardDescription>Each repo built before and after, in a sandbox</CardDescription>
         </CardHeader>
-        <Big value={results?.counted ? `${moved} of ${results.counted}` : "1 of 1"} unit="still build after the move" />
+        {results?.counted ? <Big value={`${moved} of ${results.counted}`} unit="still build after the move" /> : <Big value="Tonight" unit="results land in the table" />}
         <CardContent>
           {results ? (
             <HBars
@@ -134,7 +134,8 @@ export function ChartCards({ results }: { results: Results | null }) {
         </CardContent>
         <CardFooter>
           <span className="text-ink">
-            Counted only if it built before Upkeep touched it{results ? ` (${results.total} tried)` : ""}. One is Hexclave&apos;s own starter template.
+            Counted only if it built before Upkeep touched it{results ? ` (${results.total} tried)` : ""}.
+            {results?.starter ? " One is Hexclave's own starter template." : ""}
           </span>
           <a className={`${link} text-ink-muted`} href="https://github.com/dshak1/upkeep#results">
             Every row in the results table
