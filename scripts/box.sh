@@ -2,7 +2,7 @@
 # box.sh <dir> <command...>
 # Runs a command from a stranger's repo with no network, an empty home directory and only <dir> writable.
 # Nothing else from this machine is visible: no ~/.config, ~/.ssh, ~/.npmrc, tokens or environment.
-# Linux uses bwrap. macOS has no bwrap, so it uses sandbox-exec with the same rules.
+# Linux uses bwrap. macOS has no bwrap, so it uses sandbox-exec with the same rules (loopback only, as in bwrap's empty network).
 set -e
 T=$(realpath "$1"); shift
 HERE=$(dirname "$(realpath "$0")")
@@ -18,6 +18,8 @@ if [ "$(uname)" = Darwin ]; then
 (allow default)
 (deny network*)
 (allow network* (remote unix-socket))
+(allow network-outbound (remote ip \"localhost:*\"))
+(allow network-bind network-inbound (local ip \"localhost:*\"))
 (deny mach-lookup (global-name \"com.apple.dnssd.service\"))
 (deny file-write*)
 (allow file-write* (subpath \"$T\") (subpath \"$BOXTMP\") (literal \"/dev/null\") (literal \"/dev/tty\") (regex #\"^/dev/fd/\"))

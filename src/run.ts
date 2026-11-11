@@ -107,7 +107,12 @@ export function runTarget(t: Target, o: RunOptions): Row {
   const bRoot = fresh('before');
   const bDir = join(bRoot, t.dir);
   const mgr = managerOf(bDir, bRoot);
-  const installAt = (root: string, dir: string, log: string) => sh(mgr.cmd, mgr.name === 'bun' && existsSync(join(root, 'bun.lock')) ? root : dir, log, 900, INSTALL_ENV);
+  // Installs run with the network; one retry so a passing registry or DNS failure does not count as the repo's fault.
+  const installAt = (root: string, dir: string, log: string) => {
+    const at = mgr.name === 'bun' && existsSync(join(root, 'bun.lock')) ? root : dir;
+    const r = sh(mgr.cmd, at, log, 900, INSTALL_ENV);
+    return r.ok || timedOut ? r : sh(mgr.cmd, at, log.replace(/\.log$/, '.retry.log'), 900, INSTALL_ENV);
+  };
   const row: Row = {
     id, repo: t.repo, commit, dir: t.dir, manager: mgr.name, installCmd: mgr.cmd.join(' '), startedAt, finishedAt: '',
     oldVersions: oldVersions(bDir, o.spec), versionLanded: null,
