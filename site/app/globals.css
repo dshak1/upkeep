@@ -74,3 +74,11 @@
 @media (prefers-reduced-motion: reduce) {
   .pr-card, .pr-check, .pr-ready { animation: none; }
 }
+
+/* Aurora behind the grid: two soft brand glows drifting on long, out-of-step loops. */
+.aurora { position: absolute; border-radius: 50%; filter: blur(80px); will-change: transform; }
+.aurora-blue { background: rgb(61 107 255 / 0.32); animation: aurora-a 22s ease-in-out infinite alternate; }
+.aurora-amber { background: rgb(242 169 59 / 0.16); animation: aurora-b 28s ease-in-out infinite alternate; }
+@keyframes aurora-a { from { transform: translate3d(0, 0, 0) scale(1); } to { transform: translate3d(-12%, 8%, 0) scale(1.15); } }
+@keyframes aurora-b { from { transform: translate3d(0, 0, 0) scale(1.1); } to { transform: translate3d(10%, -10%, 0) scale(0.95); } }
+@media (prefers-reduced-motion: reduce) { .aurora-blue, .aurora-amber { animation: none; } }
