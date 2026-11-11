@@ -22,7 +22,7 @@ function buildCell(r: Row, phase: 'before' | 'after'): string {
   if (phase === 'after' && !r.after) return 'not moved';
   if (phase === 'after' && !r.after!.install.ok) return 'no (install failed)';
   const s = phase === 'before' ? r.before.build : r.after!.build;
-  if (!s) return (phase === 'before' ? r.before.typecheck : r.after!.typecheck) ? 'no build script' : 'no (no type check)';
+  if (!s) return (phase === 'before' ? r.before.typecheck : r.after!.typecheck) ? 'no build script' : 'not run (no type check)';
   return s.ok ? 'yes' : 'no';
 }
 
