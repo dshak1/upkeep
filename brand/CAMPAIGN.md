@@ -38,7 +38,7 @@ the buyer. Stars and followers are how they hear about us.
 1. Upload `brand/social/og.png` as the GitHub social preview (repo Settings, Social preview).
 2. Add a description and topics to the repo: `codemod`, `migration`, `sdk`, `typescript`, `nextjs`, `stack-auth`, `hexclave`.
 3. Put the lockup at the top of the README (`brand/logo/upkeep-lockup.svg`).
-4. Claim `@upkeepdev` (or the closest free handle) on X, LinkedIn page, GitHub org, Bluesky. Avatar: `social/avatar.png`.
+4. Claim `@useupkeep` (see `ACCOUNTS.md`) on X, LinkedIn page, GitHub org, Bluesky. Avatar: `social/avatar.png`.
    Headers: `social/x-header.png`, `social/linkedin-banner.png`.
 5. Founders post from personal accounts first. A brand account with zero followers gets zero reach; people follow people.
 6. Make a 30 second screen recording: `node src/cli.ts run` on one repo, cut to the green before and green after lines.

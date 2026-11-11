@@ -103,6 +103,12 @@ const pages = {
       <div style="font-size:56px;font-weight:700;letter-spacing:-.02em;line-height:1.12">SDK migrations, <span class="ok">proved by the repo's own build.</span></div>
       <div class="mono dim" style="margin-top:24px;font-size:22px">upkeep · github.com/dshak1/upkeep</div></div>`)],
 
+  // YouTube banner 2560 x 1440; text kept inside the 1546 x 423 safe area that shows on every device
+  'social/youtube-banner.png': [2560, 1440, base(2560, 1440, `<div class="grid"></div>
+    <div style="position:absolute;left:507px;top:509px;width:1546px;height:423px;display:flex;align-items:center;justify-content:space-between">
+      ${sized(lockupDark, 520)}
+      <div style="text-align:right;font-size:60px;font-weight:700;letter-spacing:-.02em;line-height:1.1">Old SDK <span class="old">→</span> new SDK.<br><span class="ok">Green before. Green after.</span></div></div>`)],
+
   // 1080 x 1350 scoreboard card: totals only, from results.jsonl
   'social/card-scoreboard.png': [1080, 1350, base(1080, 1350, `<div class="grid"></div>
     <div style="position:absolute;left:80px;top:80px">${sized(lockupDark, 300)}</div>

@@ -62,6 +62,7 @@ show a number the run did not produce.
 | `social/avatar.png` | 400 x 400 | X, GitHub org, LinkedIn page, Discord |
 | `social/x-header.png` | 1500 x 500 | X header (left side kept clear for the avatar) |
 | `social/linkedin-banner.png` | 1584 x 396 | LinkedIn page and personal banners |
+| `social/youtube-banner.png` | 2560 x 1440 | YouTube channel banner (text inside the safe area) |
 | `social/og.png` | 1280 x 640 | GitHub social preview, link previews |
 | `social/card-scoreboard.png` | 1080 x 1350 | Totals post on X, LinkedIn, Instagram |
 | `social/card-<repo>.png` | 1080 x 1350 | One receipt per moved repo |
