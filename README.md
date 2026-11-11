@@ -15,11 +15,16 @@ turned into this table by `node src/cli.ts report`; nothing in it is typed by ha
 Each repo is built twice, before and after Upkeep moves it, with the same install command both times.
 The type check and the build run in a sandbox with no network and an empty home directory (`scripts/box.sh`: bwrap on Linux, sandbox-exec on macOS).
 Minutes is the whole run for one repo; a repo still running after 6 minutes is stopped and shown as timeout.
+A repo whose build fetches Google Fonts with Turbopack cannot build with no network, before or after, so it shows no and no.
 
 <!-- results:start -->
-**1 of 1** repos that type-checked before the move still type-check after it, with no old package import or old name left (Check C). 1 repos attempted; 0 were not counted because they were red, had no type check or failed to install before Upkeep touched them.
+**3 of 3** repos that built before Upkeep still build after it, with none of the old package left (5 repos attempted).
 
-| Repo | Commit | Manager | Old version | Type check before | Type check after | Build before | Build after | Check C | Files changed | Lines +/- | Left for a human | Verdict |
-|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| [hexclave/multi-tenant-starter-template](https://github.com/hexclave/multi-tenant-starter-template) | `a56e81b` | npm | ^2.7.16 | green (3.1s) | green (3.1s) | green (43.8s) | green (47.3s) | pass | 9 | +15 / -15 | 0 | moved |
+| Repo | Builds before | Builds after | Old package left | Minutes |
+|---|---|---|---|---|
+| [aziontech/azion-samples](https://github.com/aziontech/azion-samples/tree/8d504e5f11c77c45b54870a8e3759129bcaac709) | yes | yes | no | 3.5 |
+| [hexclave/multi-tenant-starter-template](https://github.com/hexclave/multi-tenant-starter-template/tree/a56e81ba7af72d9adc10bc863b60499c3ea6abac) | yes | yes | no | 1.7 |
+| [makcimerrr/admin-dashboard](https://github.com/makcimerrr/admin-dashboard/tree/ec8aab85b5503dc1e7ed65280f306a0ea7cf79e1) | yes | yes | no | 5.2 |
+| [Aditya190803/Application-Tracking-System](https://github.com/Aditya190803/Application-Tracking-System/tree/5a83cf7db80b2f72e41dc170887de5f3ad2cb3d5) | no | no | no | 0.5 |
+| [joshsegatt/UK-TaxSaver](https://github.com/joshsegatt/UK-TaxSaver/tree/699f93568fa405b99d7930856096e5188dcefb1e) | no | timeout | no | 6.0 |
 <!-- results:end -->
