@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // upkeep apply <dir> [--swap-only] [--dry-run]   move one checkout and print what changed and what is left
 // upkeep check <dir>                             Check C on a checkout
-// upkeep run <targets.tsv> [--build] [--only owner/repo]   the harness: before and after, rows to runs/results.jsonl
+// upkeep run <targets.tsv> [--build] [--only owner/repo] [--minutes 6]   the harness (a repo over its minutes is recorded as timeout): before and after, rows to runs/results.jsonl
 // upkeep targets [--since 2026-08-01]                  find public repos still on the old packages
 // upkeep guard-rows                              add the agent block and CI guard to moved repos from earlier runs
 // upkeep report                                  regenerate the README table from runs/results.jsonl
@@ -50,7 +50,16 @@ if (cmd === 'apply' && target) {
   for (const t of targets) {
     if (doneIds.has(t.repo)) { console.log(`skip ${t.repo} (already in results; --again to rerun)`); continue; }
     console.log(`run  ${t.repo} ${t.dir}`);
-    const r = runTarget(t, { cache: join(base, 'cache'), work: join(base, 'work'), logs: join(base, 'logs'), results: RESULTS, build: flag('--build'), spec });
+    let r: Row;
+    try { r = runTarget(t, { cache: join(base, 'cache'), work: join(base, 'work'), logs: join(base, 'logs'), results: RESULTS, build: flag('--build'), spec, budgetSec: Number(opt('--minutes') ?? 6) * 60 }); }
+    catch (e) {
+      // The harness itself failed on this repo (for example the clone failed): keep it in the table as an error.
+      const now = new Date().toISOString(), fail = { ok: false, exit: null, secs: 0, log: String((e as Error).message).split('\n')[0] };
+      appendFileSync(RESULTS, JSON.stringify({ id: t.repo.replace('/', '__'), repo: t.repo, commit: '', dir: t.dir, manager: '', installCmd: '', startedAt: now, finishedAt: now,
+        oldVersions: {}, versionLanded: null, before: { install: fail, typecheck: null, build: null }, after: null, retry: null, checkC: null, change: null,
+        human: 0, envNames: [], verdict: 'error' } satisfies Row) + '\n');
+      console.log(`     error: ${fail.log}`); continue;
+    }
     console.log(`     ${r.verdict}  before ${r.before.typecheck?.ok ? 'green' : 'red'}  after ${r.after?.typecheck?.ok ? 'green' : r.after ? 'red' : 'not run'}  checkC ${r.checkC?.pass ?? '-'}  files ${r.change?.files ?? '-'}`);
   }
   writeReadme(join(ROOT, 'README.md'), readResults(RESULTS));

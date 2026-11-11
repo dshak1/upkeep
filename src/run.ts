@@ -26,13 +26,21 @@ export interface Row {
   change: { files: number; added: number; removed: number; lockfileChanged: boolean } | null;
   human: number; envNames: string[];
   guard?: { files: string[]; passes: boolean } | null;
-  verdict: 'moved' | 'moved at fallback version' | 'partial' | 'red after' | 'not counted (red before)' | 'not counted (no type check)' | 'not counted (install failed)';
+  verdict: 'timeout' | 'error' | 'moved' | 'moved at fallback version' | 'partial' | 'red after' | 'not counted (red before)' | 'not counted (no type check)' | 'not counted (install failed)';
 }
+
+// Per-repo time budget: every step gets what is left of it. A step cut off by the budget marks the repo as timeout.
+let deadline = Infinity;
+let timedOut = false;
 
 function sh(cmd: string[], cwd: string, log: string, timeoutSec: number, env: Record<string, string> = {}): StepResult {
   const t0 = Date.now();
   mkdirSync(dirname(log), { recursive: true });
-  const r = spawnSync(cmd[0], cmd.slice(1), { cwd, env: { ...process.env, ...env }, timeout: timeoutSec * 1000, maxBuffer: 1 << 28, encoding: 'utf8' });
+  const left = Math.floor((deadline - t0) / 1000);
+  const limit = Math.max(1, Math.min(timeoutSec, left));
+  if (left < timeoutSec) cmd = ['timeout', '-k', '10', String(limit), ...cmd]; // kills the whole process group, not just the shell
+  const r = spawnSync(cmd[0], cmd.slice(1), { cwd, env: { ...process.env, ...env }, timeout: (limit + 30) * 1000, maxBuffer: 1 << 28, encoding: 'utf8' });
+  if (left < timeoutSec && (r.status === 124 || r.status === 137 || r.error)) timedOut = true;
   const out = `$ ${cmd.join(' ')}\n(cwd ${cwd})\n${r.stdout ?? ''}${r.stderr ?? ''}${r.error ? `\n${r.error.message}` : ''}\nexit ${r.status}\n`;
   writeFileSync(log, out);
   return { ok: r.status === 0, exit: r.status, secs: Math.round((Date.now() - t0) / 100) / 10, log };
@@ -79,9 +87,11 @@ function numstat(root: string): { files: number; added: number; removed: number;
   return { files, added, removed, lockfileChanged: lock };
 }
 
-export interface RunOptions { cache: string; work: string; logs: string; results: string; build: boolean; spec: Spec }
+export interface RunOptions { cache: string; work: string; logs: string; results: string; build: boolean; spec: Spec; budgetSec?: number }
 
 export function runTarget(t: Target, o: RunOptions): Row {
+  deadline = o.budgetSec ? Date.now() + o.budgetSec * 1000 : Infinity;
+  timedOut = false;
   const id = t.repo.replace('/', '__');
   const src = join(o.cache, id);
   if (!existsSync(join(src, '.git'))) {
@@ -104,11 +114,13 @@ export function runTarget(t: Target, o: RunOptions): Row {
     before: { install: installAt(bRoot, bDir, L('before', 'install')), typecheck: null, build: null },
     after: null, retry: null, checkC: null, change: null, human: 0, envNames: [], verdict: 'not counted (red before)',
   };
-  const done = (r: Row) => { r.finishedAt = new Date().toISOString(); appendFileSync(o.results, JSON.stringify(r) + '\n'); return r; };
+  const done = (r: Row) => { if (timedOut) r.verdict = 'timeout'; r.finishedAt = new Date().toISOString(); appendFileSync(o.results, JSON.stringify(r) + '\n'); return r; };
+  if (timedOut) return done(row);
   if (!row.before.install.ok) { row.verdict = 'not counted (install failed)'; return done(row); }
   row.before.typecheck = typecheck(bDir, L('before', 'typecheck'));
   if (!row.before.typecheck) { row.verdict = 'not counted (no type check)'; return done(row); }
-  if (o.build) row.before.build = build(bDir, L('before', 'build'));
+  if (o.build && !timedOut) row.before.build = build(bDir, L('before', 'build'));
+  if (timedOut) return done(row);
 
   // After: a second untouched copy, moved by Upkeep, then the same install and checks.
   const aRoot = fresh('after');
@@ -124,10 +136,12 @@ export function runTarget(t: Target, o: RunOptions): Row {
   const aInstall = installAt(aRoot, aDir, L('after', 'install'));
   row.change.lockfileChanged = numstat(aRoot).lockfileChanged;
   row.after = { install: aInstall, typecheck: aInstall.ok ? typecheck(aDir, L('after', 'typecheck')) : null, build: null };
+  if (timedOut) return done(row);
   if (o.build && aInstall.ok) row.after.build = build(aDir, L('after', 'build'));
   if (row.after.typecheck?.ok) row.versionLanded = o.spec.version;
 
   // Red after a green before: retry at the first release of the new packages, to separate the rename from release drift.
+  if (timedOut) return done(row);
   if (row.before.typecheck.ok && !row.after.typecheck?.ok) {
     const rRoot = fresh('after-fallback');
     applySpec(rRoot, o.spec, { version: o.spec.fallbackVersion });
@@ -141,6 +155,7 @@ export function runTarget(t: Target, o: RunOptions): Row {
   else if (!row.versionLanded || !buildOk) row.verdict = 'red after';
   else if (!c.pass) row.verdict = 'partial';
   else row.verdict = row.versionLanded === o.spec.version ? 'moved' : 'moved at fallback version';
+  if (timedOut) return done(row);
   if (row.verdict !== 'red after' && row.verdict !== 'not counted (red before)') row.guard = addGuard(aRoot, o.spec, row, rep);
   return done(row);
 }

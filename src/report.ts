@@ -2,7 +2,6 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import type { Row, StepResult } from './run.ts';
 
-const cell = (s: StepResult | null | undefined) => !s ? 'n/a' : s.ok ? `green${s.secs ? ` (${s.secs}s)` : ''}` : `red${s.errors !== undefined ? ` (${s.errors} errors)` : ''}`;
 
 export function latestRows(rows: Row[]): Row[] {
   const by = new Map<string, Row>();
@@ -10,22 +9,49 @@ export function latestRows(rows: Row[]): Row[] {
   return [...by.values()];
 }
 
+const builtBefore = (r: Row) => !!r.before.build?.ok;
+const builtAfter = (r: Row) => builtBefore(r) && !!r.after?.build?.ok && !!r.checkC?.pass;
+const cutOff = (r: Row, s: StepResult | null | undefined) => r.verdict === 'timeout' && !!s && !s.ok && (s.exit === 124 || s.exit === 137 || s.exit === null);
+
+function buildCell(r: Row, phase: 'before' | 'after'): string {
+  if (r.verdict === 'error') return 'error';
+  const steps = phase === 'before' ? [r.before.install, r.before.typecheck, r.before.build] : [r.after?.install, r.after?.typecheck, r.after?.build];
+  if (steps.some((s) => cutOff(r, s))) return 'timeout';
+  if (r.verdict === 'timeout' && !(phase === 'before' ? r.before.build : r.after?.build)) return 'timeout';
+  if (phase === 'before' && !r.before.install.ok) return 'no (install failed)';
+  if (phase === 'after' && !r.after) return 'not moved';
+  if (phase === 'after' && !r.after!.install.ok) return 'no (install failed)';
+  const s = phase === 'before' ? r.before.build : r.after!.build;
+  if (!s) return (phase === 'before' ? r.before.typecheck : r.after!.typecheck) ? 'no build script' : 'no (no type check)';
+  return s.ok ? 'yes' : 'no';
+}
+
+function oldLeft(r: Row): string {
+  if (!r.checkC) return r.verdict === 'timeout' ? 'timeout' : r.verdict === 'error' ? 'error' : 'not moved';
+  if (r.checkC.pass) return 'no';
+  const n = r.checkC.oldSpecifiers.length + r.checkC.oldNames.length + r.checkC.oldHost.length;
+  return n ? `yes (${n} place${n === 1 ? "" : "s"})` : 'no, but a file it must not edit changed';
+}
+
+const minutes = (r: Row) => ((Date.parse(r.finishedAt) - Date.parse(r.startedAt)) / 60000).toFixed(1);
+
+export function counts(rows: Row[]): { attempted: number; greenBefore: number; greenAfter: number } {
+  const rs = latestRows(rows);
+  return { attempted: rs.length, greenBefore: rs.filter(builtBefore).length, greenAfter: rs.filter(builtAfter).length };
+}
+
 export function table(rows: Row[]): string {
   const rs = latestRows(rows);
-  const counted = rs.filter((r) => r.before.typecheck?.ok);
-  const moved = counted.filter((r) => r.verdict === 'moved' || r.verdict === 'moved at fallback version');
+  const c = counts(rows);
   const head = [
-    `**${moved.length} of ${counted.length}** repos that type-checked before the move still type-check after it, with no old package import or old name left (Check C). ` +
-    `${rs.length} repos attempted; ${rs.length - counted.length} were not counted because they were red, had no type check or failed to install before Upkeep touched them.`,
+    `**${c.greenAfter} of ${c.greenBefore}** repos that built before Upkeep still build after it, with none of the old package left (${c.attempted} repos attempted).`,
     '',
-    '| Repo | Commit | Manager | Old version | Type check before | Type check after | Build before | Build after | Check C | Files changed | Lines +/- | Left for a human | Guard | Verdict |',
-    '|---|---|---|---|---|---|---|---|---|---|---|---|---|---|',
+    '| Repo | Builds before | Builds after | Old package left | Minutes |',
+    '|---|---|---|---|---|',
   ];
-  const order = (r: Row) => (r.verdict.startsWith('moved') ? 0 : r.verdict === 'partial' ? 1 : r.verdict === 'red after' ? 2 : 3);
-  const body = rs.sort((a, b) => order(a) - order(b) || a.repo.localeCompare(b.repo)).map((r) => {
-    const after = r.retry?.typecheck?.ok ? `${cell(r.after?.typecheck)}; green at ${r.retry.version}` : cell(r.after?.typecheck);
-    return `| [${r.repo}](https://github.com/${r.repo}) | \`${r.commit.slice(0, 7)}\` | ${r.manager} | ${Object.values(r.oldVersions).join(', ') || 'n/a'} | ${cell(r.before.typecheck)} | ${r.after ? after : 'not run'} | ${cell(r.before.build)} | ${cell(r.after?.build)} | ${r.checkC ? (r.checkC.pass ? 'pass' : 'fail') : 'not run'} | ${r.change?.files ?? ''} | ${r.change ? `+${r.change.added} / -${r.change.removed}` : ''} | ${r.after ? r.human : ''} | ${r.guard ? (r.guard.passes ? 'added, passes' : 'added, fails') : ''} | ${r.verdict} |`;
-  });
+  const order = (r: Row) => (builtAfter(r) ? 0 : builtBefore(r) ? 1 : 2);
+  const body = rs.sort((a, b) => order(a) - order(b) || a.repo.localeCompare(b.repo)).map((r) =>
+    `| [${r.repo}](https://github.com/${r.repo}/tree/${r.commit}) | ${buildCell(r, 'before')} | ${buildCell(r, 'after')} | ${oldLeft(r)} | ${minutes(r)} |`);
   return [...head, ...body].join('\n');
 }
 

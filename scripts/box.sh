@@ -2,10 +2,38 @@
 # box.sh <dir> <command...>
 # Runs a command from a stranger's repo with no network, an empty home directory and only <dir> writable.
 # Nothing else from this machine is visible: no ~/.config, ~/.ssh, ~/.npmrc, tokens or environment.
+# Linux uses bwrap. macOS has no bwrap, so it uses sandbox-exec with the same rules.
 set -e
 T=$(realpath "$1"); shift
 HERE=$(dirname "$(realpath "$0")")
-NODE_DIR=$(dirname "$(readlink -f "$(command -v node)")")
+NODE_DIR=$(dirname "$(realpath "$(command -v node)")")
+
+if [ "$(uname)" = Darwin ]; then
+  BOXTMP=$(mktemp -d /private/tmp/upkeep-box.XXXXXX)
+  trap 'rm -rf "$BOXTMP"' EXIT
+  mkdir -p "$BOXTMP/home" "$BOXTMP/tmp"
+  NODE_ROOT=$(realpath "$NODE_DIR/..")
+  PROFILE="(version 1)
+(allow default)
+(deny network*)
+(allow network* (remote unix-socket))
+(deny file-write*)
+(allow file-write* (subpath \"$T\") (subpath \"$BOXTMP\") (literal \"/dev/null\") (literal \"/dev/tty\") (regex #\"^/dev/fd/\"))
+(deny file-read-data (subpath \"$HOME\") (subpath \"/Users\") (subpath \"/Volumes\") (subpath \"/nix\") (subpath \"/private/var/folders\") (subpath \"/private/tmp\"))
+(allow file-read-data (subpath \"$T\") (subpath \"$BOXTMP\") (subpath \"$NODE_ROOT\") (literal \"$HERE/fonts-mock.cjs\"))"
+  cd "$T"
+
+  set +e
+  env -i PATH="$T/node_modules/.bin:$NODE_DIR:/usr/bin:/bin" HOME="$BOXTMP/home" TMPDIR="$BOXTMP/tmp" \
+    CI=1 NEXT_TELEMETRY_DISABLED=1 NODE_OPTIONS=--max-old-space-size=4096 \
+    NEXT_FONT_GOOGLE_MOCKED_RESPONSES="$HERE/fonts-mock.cjs" \
+    NEXT_PUBLIC_STACK_PROJECT_ID=00000000-0000-4000-8000-000000000000 \
+    NEXT_PUBLIC_STACK_PUBLISHABLE_CLIENT_KEY=pck_placeholder \
+    STACK_SECRET_SERVER_KEY=ssk_placeholder \
+    sandbox-exec -p "$PROFILE" "$@"
+  exit $?
+fi
+
 exec bwrap --die-with-parent --unshare-net --unshare-pid --unshare-ipc --new-session \
   --ro-bind /usr /usr --ro-bind /etc /etc --symlink usr/bin /bin --symlink usr/lib /lib --symlink usr/lib64 /lib64 \
   --proc /proc --dev /dev --tmpfs /tmp --tmpfs /home --dir /home/box \
