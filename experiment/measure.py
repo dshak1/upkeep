@@ -53,11 +53,11 @@ def snapshot(app, sdk, tag, t0):
     runs = ghj(f"repos/{app}/actions/runs?event=repository_dispatch&per_page=20")["workflow_runs"]
     runs = [r for r in runs if ts(r["created_at"]) >= t0]
     for r in runs:
-        if r["name"] == "upkeep":
+        if r["path"].endswith("/upkeep.yml"):
             s["dispatch"] = r["created_at"]
             s["upkeep_run"] = r["html_url"]
             s["upkeep_conclusion"] = r["conclusion"]
-        if r["name"] == "sdk-latest" and r["status"] == "completed":
+        if r["path"].endswith("/sdk-latest.yml") and r["status"] == "completed":
             s["red_conclusion"] = r["conclusion"]
             s["red"] = r["updated_at"]
             s["red_run"] = r["html_url"]
