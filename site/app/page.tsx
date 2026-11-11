@@ -8,7 +8,7 @@ import { CLI_LINE, actionLine } from "@/lib/install"
 import { loadResults } from "@/lib/results"
 import { siteFrom } from "@/lib/site"
 
-const HEADLINE = "Your code fixes itself."
+const HEADLINE = ["Libraries change.", "Your code keeps up."]
 const SUBLINE = "When a library you use changes, Upkeep opens the fix, only if your tests pass."
 
 function Mark() {
@@ -19,7 +19,6 @@ function Mark() {
 export default async function Page() {
   const site = siteFrom(await headers())
   const pilotUrl = process.env.NEXT_PUBLIC_PILOT_URL?.trim()
-  const words = HEADLINE.split(" ")
   const results = await loadResults()
 
   return (
@@ -40,12 +39,16 @@ export default async function Page() {
 
       <section aria-labelledby="hero-title" className="px-4 pt-12 sm:px-8 sm:pt-20">
         <div className="mx-auto max-w-[880px] text-center">
-          <h1 id="hero-title" className="display text-balance text-[52px] leading-[1.02] text-ink sm:text-[80px] lg:text-[96px]">
-            {words.map((w, i) => (
-              <span key={i}>
-                <span className="up-word" style={{ ["--i" as string]: i }}>
-                  {w}
-                </span>{" "}
+          <h1 id="hero-title" className="display text-balance text-[44px] leading-[1.04] text-ink sm:text-[72px] lg:text-[88px]">
+            {HEADLINE.map((line, l) => (
+              <span key={l} className="block">
+                {line.split(" ").map((w, i) => (
+                  <span key={i}>
+                    <span className="up-word" style={{ ["--i" as string]: l * 2 + i }}>
+                      {w}
+                    </span>{" "}
+                  </span>
+                ))}
               </span>
             ))}
           </h1>
