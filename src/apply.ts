@@ -82,6 +82,7 @@ export function transformCode(file: string, text: string, spec: Spec, opts: { id
   const namespaces = new Set<string>();
   const idMap = spec.identifiers.map;
   const pkgRe = packageRegex(spec);
+  const idKind = `identifier (${spec.identifiers.source.split(' (')[0]})`;
   const line = (pos: number) => sf.getLineAndCharacterOfPosition(pos).line + 1;
   const edit = (start: number, end: number, to: string, kind: string) => {
     edits.push({ start, end, text: to });
@@ -120,7 +121,7 @@ export function transformCode(file: string, text: string, spec: Spec, opts: { id
               const to = idMap[imported];
               if (!to) continue;
               if (el.propertyName) edit(el.propertyName.getStart(), el.propertyName.getEnd(), to, `identifier (${spec.identifiers.source.split(' (')[0]})`);
-              else { edit(el.name.getStart(), el.name.getEnd(), to, 'identifier (guide L26)'); renames.set(imported, to); }
+              else { edit(el.name.getStart(), el.name.getEnd(), to, idKind); renames.set(imported, to); }
             }
           }
         } else if (node.exportClause && ts.isNamedExports(node.exportClause)) {
@@ -129,8 +130,8 @@ export function transformCode(file: string, text: string, spec: Spec, opts: { id
             const to = idMap[imported];
             if (!to) continue;
             // Keep this file's own exported name; only the name taken from the package changes.
-            if (el.propertyName) edit(el.propertyName.getStart(), el.propertyName.getEnd(), to, 'identifier (guide L26)');
-            else edit(el.name.getStart(), el.name.getEnd(), `${to} as ${imported}`, 'identifier (guide L26), exported name kept');
+            if (el.propertyName) edit(el.propertyName.getStart(), el.propertyName.getEnd(), to, idKind);
+            else edit(el.name.getStart(), el.name.getEnd(), `${to} as ${imported}`, `${idKind}, exported name kept`);
           }
         }
       }
@@ -143,7 +144,7 @@ export function transformCode(file: string, text: string, spec: Spec, opts: { id
     } else if (ts.isImportTypeNode(node) && ts.isLiteralTypeNode(node.argument) && ts.isStringLiteral(node.argument.literal)) {
       const old = specifier(node.argument.literal);
       if (old && opts.identifiers && !opts.stringsOnly && node.qualifier && ts.isIdentifier(node.qualifier) && idMap[node.qualifier.text]) {
-        edit(node.qualifier.getStart(), node.qualifier.getEnd(), idMap[node.qualifier.text], 'identifier (guide L26)');
+        edit(node.qualifier.getStart(), node.qualifier.getEnd(), idMap[node.qualifier.text], idKind);
       }
     } else if ((ts.isStringLiteral(node) || ts.isNoSubstitutionTemplateLiteral(node)) && !done.has(node.getStart())) {
       // Package names inside other strings: transpilePackages lists, tailwind content globs, mocks.
@@ -172,16 +173,16 @@ export function transformCode(file: string, text: string, spec: Spec, opts: { id
           || (ts.isBindingElement(p) && p.propertyName === node)
           || (ts.isExportSpecifier(p) && p.propertyName !== undefined && p.name === node);
         if (!skip) {
-          if (ts.isShorthandPropertyAssignment(p)) edit(node.getStart(), node.getEnd(), `${node.text}: ${to}`, 'identifier (guide L26), object key kept');
-          else if (ts.isExportSpecifier(p) && !p.propertyName) edit(node.getStart(), node.getEnd(), `${to} as ${node.text}`, 'identifier (guide L26), exported name kept');
-          else edit(node.getStart(), node.getEnd(), to, 'identifier (guide L26)');
+          if (ts.isShorthandPropertyAssignment(p)) edit(node.getStart(), node.getEnd(), `${node.text}: ${to}`, `${idKind}, object key kept`);
+          else if (ts.isExportSpecifier(p) && !p.propertyName) edit(node.getStart(), node.getEnd(), `${to} as ${node.text}`, `${idKind}, exported name kept`);
+          else edit(node.getStart(), node.getEnd(), to, idKind);
         }
       }
       if (ts.isPropertyAccessExpression(node) && ts.isIdentifier(node.expression) && namespaces.has(node.expression.text) && idMap[node.name.text]) {
-        edit(node.name.getStart(), node.name.getEnd(), idMap[node.name.text], 'identifier (guide L26)');
+        edit(node.name.getStart(), node.name.getEnd(), idMap[node.name.text], idKind);
       }
       if (ts.isQualifiedName(node) && ts.isIdentifier(node.left) && namespaces.has(node.left.text) && idMap[node.right.text]) {
-        edit(node.right.getStart(), node.right.getEnd(), idMap[node.right.text], 'identifier (guide L26)');
+        edit(node.right.getStart(), node.right.getEnd(), idMap[node.right.text], idKind);
       }
       ts.forEachChild(node, refs);
     };
@@ -257,7 +258,7 @@ export function applySpec(dir: string, spec: Spec, opts: ApplyOptions = {}): App
       if (write) writeFileSync(path, out);
     }
   }
-  rep.envNames = [...env].sort();
+  rep.envNames = [...env].filter((n) => !(n in spec.identifiers.map)).sort(); // an SDK constant is not an env var
   return rep;
 }
 

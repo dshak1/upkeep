@@ -2,3 +2,5 @@ node_modules/
 dist/
 *.log
 .work/
+experiment/watch.log
+experiment/watch.jsonl
