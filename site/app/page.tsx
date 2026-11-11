@@ -81,7 +81,7 @@ export default async function Page() {
         <div className="mx-auto max-w-[1280px]">
           <p className="lp-mono text-[12px] uppercase tracking-[0.08em] text-frozen">The Hexclave case</p>
           <h2 id="case-title" className="display mt-4 max-w-[22ch] text-balance text-[32px] leading-[1.08] sm:text-[48px]">
-            Hexclave renamed its SDK in May. Most of the code using it never moved.
+            Hexclave renamed its library in May. Four in ten installs never moved.
           </h2>
           <p className="mt-5 max-w-[60ch] text-pretty text-[16px] leading-[1.6] text-ink-muted sm:text-[17px]">
             On May 27, <span className="lp-mono text-[0.92em] text-ink">@stackframe/stack</span> became{" "}
