@@ -1,10 +1,10 @@
 import { headers } from "next/headers"
 
 import { ChartCards } from "@/components/ChartCards"
-import { FlickeringGrid } from "@/components/FlickeringGrid"
 import { InstallPill } from "@/components/InstallPill"
 import { Pill } from "@/components/Pill"
 import { PullRequestCard } from "@/components/PullRequestCard"
+import { TerminalDemo } from "@/components/TerminalDemo"
 import { VerbCycle } from "@/components/VerbCycle"
 import { CLI_LINE, actionLine } from "@/lib/install"
 import { loadResults } from "@/lib/results"
@@ -17,12 +17,12 @@ function Mark() {
 
 function PilotButton({ url }: { url?: string }) {
   return url ? (
-    <Pill href={url} kind="utility" tone="accent">
+    <Pill href={url} kind="utility" tone="paper">
       Start a founding pilot, $5
     </Pill>
   ) : (
-    <span className="inline-flex flex-col items-start gap-1.5">
-      <Pill kind="utility" tone="accent" disabled aria-disabled className="cursor-not-allowed opacity-45 hover:bg-accent">
+    <span className="inline-flex flex-col items-center gap-1.5">
+      <Pill kind="utility" tone="paper" disabled aria-disabled className="cursor-not-allowed opacity-50">
         Start a founding pilot, $5
       </Pill>
       <span className="lp-mono pl-1 text-[11.5px] text-ink-muted">Checkout opens tonight.</span>
@@ -37,16 +37,7 @@ export default async function Page() {
 
   return (
     <main className="lp relative overflow-hidden">
-      <section aria-labelledby="hero-title" className="relative isolate flex min-h-[100svh] flex-col">
-        <div aria-hidden className="absolute inset-0 -z-20 overflow-hidden bg-paper">
-          <div className="aurora aurora-blue right-[-10%] top-[-20%] h-[70vh] w-[60vw]" />
-          <div className="aurora aurora-amber right-[15%] top-[25%] h-[45vh] w-[40vw]" />
-          <div className="absolute inset-0 [mask-image:radial-gradient(ellipse_80%_75%_at_75%_30%,#000_25%,transparent_80%)]">
-            <FlickeringGrid />
-          </div>
-        </div>
-        <div aria-hidden className="absolute inset-x-0 bottom-0 -z-10 h-[55%] bg-gradient-to-t from-paper via-paper/80 to-transparent" />
-
+      <section aria-labelledby="hero-title" className="relative flex min-h-[100svh] flex-col overflow-hidden bg-black">
         <header className="mx-auto flex h-16 w-full max-w-[1280px] items-center justify-between px-4 sm:px-10">
           <Mark />
           <a href="https://github.com/dshak1/upkeep" className="text-[14px] text-ink/80 transition-colors hover:text-ink">
@@ -54,8 +45,8 @@ export default async function Page() {
           </a>
         </header>
 
-        <div className="mx-auto mt-auto w-full max-w-[1280px] px-4 pb-12 sm:px-10 sm:pb-16">
-          <h1 id="hero-title" className="display max-w-[14ch] text-[48px] leading-[1.04] text-ink sm:text-[80px] lg:text-[104px]">
+        <div className={`td-cam mx-auto flex w-full max-w-[1280px] flex-1 flex-col items-center justify-center px-4 pb-16 pt-6 text-center sm:px-10`}>
+          <h1 id="hero-title" className="display text-[44px] leading-[1.04] text-white sm:text-[72px] lg:text-[88px]">
             <span className="up-word block" style={{ ["--i" as string]: 0 }}>
               Libraries <VerbCycle />
             </span>
@@ -63,11 +54,23 @@ export default async function Page() {
               Your code keeps up.
             </span>
           </h1>
-          <div className="up-rise mt-9 flex flex-col items-start gap-4 lg:flex-row lg:items-start" style={{ ["--d" as string]: "450ms" }}>
-            <InstallPill actionLine={actionLine(site)} cliLine={CLI_LINE} />
+          <div className="mt-12 w-full sm:mt-16">
+            <TerminalDemo />
+          </div>
+          <p className="up-rise mt-10 text-[17px] text-ink-muted sm:text-[19px]" style={{ ["--d" as string]: "300ms" }}>
+            One line in your terminal. Never migrate by hand again.
+          </p>
+          <div className="up-rise mt-8 flex flex-col items-center gap-3" style={{ ["--d" as string]: "500ms" }}>
             <PilotButton url={pilotUrl} />
+            <a href="#install" className="text-[13px] text-ink-muted underline-offset-4 hover:text-ink hover:underline">
+              Or add it as a GitHub Action
+            </a>
           </div>
         </div>
+      </section>
+
+      <section id="install" aria-label="Install" className="flex justify-center bg-black px-4 pb-20 sm:px-8">
+        <InstallPill actionLine={actionLine(site)} cliLine={CLI_LINE} />
       </section>
 
       <section aria-label="A pull request Upkeep opened tonight" className="px-4 pt-20 sm:px-8 sm:pt-24">
