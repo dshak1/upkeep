@@ -1,0 +1,146 @@
+name: Upkeep
+description: When an SDK you depend on is renamed, move this repo to the new one and open a pull request, only if your own build and tests pass.
+inputs:
+  spec:
+    description: Migration spec, a file name under this action's specs/ folder (e.g. hexclave, upkeep-demo-sdk) or a path in the repo.
+    required: true
+  version:
+    description: Dependency value written for the new package (a semver range or a git URL with the new tag). Defaults to the spec's version.
+    default: ''
+  release:
+    description: Name of the release that triggered this run (e.g. v2.0.0), used in the branch name and the PR title.
+    default: ''
+  install:
+    description: Command that installs dependencies and rewrites the lockfile after the move.
+    default: npm install --no-audit --no-fund
+  build:
+    description: The repo's own build command.
+    default: npm run build
+  test:
+    description: The repo's own test command.
+    default: npm test
+  ci-workflow:
+    description: Workflow file to run on the PR branch so the PR shows the repo's own checks (a PR opened with GITHUB_TOKEN does not start workflows by itself). Empty to skip.
+    default: ci.yml
+  token:
+    description: Token used to push the branch and open the pull request.
+    default: ${{ github.token }}
+outputs:
+  result:
+    description: "pr: a PR was opened or updated; red: build or test failed after the move, an issue was opened; nothing: no old package found."
+    value: ${{ steps.done.outputs.result }}
+  pr-url:
+    description: URL of the pull request, when one was opened.
+    value: ${{ steps.done.outputs.pr-url }}
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-node@v4
+      with:
+        node-version: 24
+    - name: Install Upkeep
+      shell: bash
+      run: npm ci --prefix "$GITHUB_ACTION_PATH" --no-audit --no-fund --silent
+    - name: Move to the new package
+      id: apply
+      shell: bash
+      env:
+        SPEC: ${{ inputs.spec }}
+        VERSION: ${{ inputs.version }}
+      run: |
+        spec="$SPEC"
+        [ -f "$spec" ] || spec="$GITHUB_ACTION_PATH/specs/$SPEC.json"
+        echo "spec=$spec" >> "$GITHUB_OUTPUT"
+        args=(apply . --spec "$spec" --json "$RUNNER_TEMP/upkeep.json" --pr-body "$RUNNER_TEMP/upkeep-pr.md" --repo "$GITHUB_REPOSITORY" --commit "$GITHUB_SHA")
+        [ -n "$VERSION" ] && args+=(--version "$VERSION")
+        set +e
+        node "$GITHUB_ACTION_PATH/src/cli.ts" "${args[@]}" | tee "$RUNNER_TEMP/upkeep-apply.log"
+        echo "checkc=${PIPESTATUS[0]}" >> "$GITHUB_OUTPUT"
+        files=$(node -p "require('$RUNNER_TEMP/upkeep.json').changedFiles.length")
+        echo "files=$files" >> "$GITHUB_OUTPUT"
+    - name: Install, build and test after the move
+      id: verify
+      if: steps.apply.outputs.files != '0'
+      shell: bash
+      env:
+        INSTALL: ${{ inputs.install }}
+        BUILD: ${{ inputs.build }}
+        TEST: ${{ inputs.test }}
+      run: |
+        set +e
+        ok=true
+        for step in install build test; do
+          cmd=$(eval echo "\$${step^^}")
+          [ -z "$cmd" ] && continue
+          echo "::group::$step: $cmd"
+          bash -c "$cmd" > "$RUNNER_TEMP/upkeep-$step.log" 2>&1
+          code=$?
+          cat "$RUNNER_TEMP/upkeep-$step.log"
+          echo "::endgroup::"
+          echo "$step=$code" >> "$GITHUB_OUTPUT"
+          echo "$step exit $code"
+          if [ $code -ne 0 ]; then ok=false; echo "failed=$step" >> "$GITHUB_OUTPUT"; break; fi
+        done
+        echo "ok=$ok" >> "$GITHUB_OUTPUT"
+    - name: Open the pull request (green) or an issue (red)
+      id: done
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.token }}
+        FILES: ${{ steps.apply.outputs.files }}
+        CHECKC: ${{ steps.apply.outputs.checkc }}
+        OK: ${{ steps.verify.outputs.ok }}
+        FAILED: ${{ steps.verify.outputs.failed }}
+        RELEASE: ${{ inputs.release }}
+        BUILD: ${{ inputs.build }}
+        TEST: ${{ inputs.test }}
+        CI_WORKFLOW: ${{ inputs.ci-workflow }}
+      run: |
+        if [ "$FILES" = "0" ]; then echo "No old package found. Nothing to do."; echo "result=nothing" >> "$GITHUB_OUTPUT"; exit 0; fi
+        to=$(node -p "Object.values(require('${{ steps.apply.outputs.spec }}').packages)[0].to")
+        slug=$(echo "$to" | tr -c 'A-Za-z0-9.\n' '-' | sed 's/^-*//')
+        branch="upkeep/${slug}${RELEASE:+-$RELEASE}"
+        title="Move to $to${RELEASE:+ $RELEASE}: build and tests pass"
+        body="$RUNNER_TEMP/upkeep-pr.md"
+        run_url="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+        if [ "$OK" = "true" ] && [ "$CHECKC" = "0" ]; then
+          {
+            echo
+            echo "## Verified in this repo, before opening this PR"
+            echo
+            echo "- Build \`$BUILD\`: pass"
+            echo "- Test \`$TEST\`: pass"
+            echo "- Check C (no old package, old name or old host left): pass"
+            echo "- Run: $run_url"
+            echo
+            echo "Opened by [Upkeep](https://github.com/dshak1/upkeep)${RELEASE:+ on release $RELEASE}. Nothing changes until a human merges."
+          } >> "$body"
+          git config user.name "upkeep[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -B "$branch"
+          git add -A
+          git reset -q -- node_modules dist 2>/dev/null || true
+          git commit -q -m "$title" -m "Moved by Upkeep following the provider's migration guide. Build and tests pass: $run_url"
+          git push -q -f origin "$branch"
+          url=$(gh pr list --head "$branch" --state open --json url --jq '.[0].url')
+          if [ -n "$url" ]; then gh pr edit "$url" --title "$title" --body-file "$body" >/dev/null
+          else url=$(gh pr create --head "$branch" --base "${GITHUB_BASE_REF:-$(gh repo view --json defaultBranchRef --jq .defaultBranchRef.name)}" --title "$title" --body-file "$body"); fi
+          echo "PR: $url"
+          if [ -n "$CI_WORKFLOW" ]; then gh workflow run "$CI_WORKFLOW" --ref "$branch" && echo "started $CI_WORKFLOW on $branch"; fi
+          echo "result=pr" >> "$GITHUB_OUTPUT"; echo "pr-url=$url" >> "$GITHUB_OUTPUT"
+          echo "### Upkeep opened $url" >> "$GITHUB_STEP_SUMMARY"
+        else
+          why="${FAILED:+$FAILED failed after the move}"; [ "$CHECKC" != "0" ] && why="${why:+$why; }Check C failed (old names left)"
+          {
+            echo "Upkeep tried to move this repo to \`$to\`${RELEASE:+ on release $RELEASE} and did not open a PR: $why."
+            echo
+            echo "Run: $run_url"
+            echo
+            echo '```'
+            tail -n 40 "$RUNNER_TEMP/upkeep-${FAILED:-apply}.log" 2>/dev/null || true
+            echo '```'
+          } > "$RUNNER_TEMP/upkeep-issue.md"
+          gh issue create --title "Upkeep: move to $to${RELEASE:+ $RELEASE} needs a human" --body-file "$RUNNER_TEMP/upkeep-issue.md" || true
+          echo "result=red" >> "$GITHUB_OUTPUT"
+          exit 1
+        fi

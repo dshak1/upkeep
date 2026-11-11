@@ -3,11 +3,18 @@ import type { ApplyReport } from './apply.ts';
 import type { CheckC } from './checkc.ts';
 import type { Spec } from './spec.ts';
 
+const scopeOf = (names: string[]) => {
+  const scopes = new Set(names.map((n) => (n.startsWith('@') ? n.split('/')[0] + '/*' : n)));
+  return scopes.size === 1 && names.length > 1 ? [...scopes][0] : names.join(', ');
+};
+const fromNames = (spec: Spec) => scopeOf(Object.keys(spec.packages));
+const toNames = (spec: Spec) => scopeOf(Object.values(spec.packages).map((p) => p.to));
+
 export function prBody(repo: string, commit: string, spec: Spec, rep: ApplyReport, c: CheckC): string {
   const byKind = new Map<string, number>();
   for (const e of rep.edits) byKind.set(e.kind, (byKind.get(e.kind) ?? 0) + 1);
   const lines = [
-    `# Move ${repo} from @stackframe/* to @hexclave/*`,
+    `# Move ${repo} from ${fromNames(spec)} to ${toNames(spec)}`,
     '',
     `${spec.provider} renamed its packages. The old ones still work and are frozen; this moves the code to the new ones, following the migration guide (${spec.guide.url}).`,
     `Base commit: \`${commit.slice(0, 12)}\`.`,

@@ -1,5 +1,6 @@
 #!/usr/bin/env node
-// upkeep apply <dir> [--swap-only] [--dry-run]   move one checkout and print what changed and what is left
+// upkeep apply <dir> [--swap-only] [--dry-run] [--version <range>] [--pr-body <file>] [--json <file>]
+//                                                move one checkout and print what changed and what is left
 // upkeep check <dir>                             Check C on a checkout
 // upkeep run <targets.tsv> [--build] [--only owner/repo]   the harness: before and after, rows to runs/results.jsonl
 // upkeep targets [--since 2026-08-01]                  find public repos still on the old packages
@@ -11,7 +12,8 @@ import { homedir } from 'node:os';
 import { applySpec } from './apply.ts';
 import { checkC } from './checkc.ts';
 import { addGuard, readResults, runTarget, type Row, type Target } from './run.ts';
-import { appendFileSync, existsSync } from 'node:fs';
+import { appendFileSync, existsSync, writeFileSync } from 'node:fs';
+import { prBody } from './pr.ts';
 import { writeReadme } from './report.ts';
 import { loadSpec } from './spec.ts';
 import { findTargets, writeTargets } from './targets.ts';
@@ -25,7 +27,7 @@ const RESULTS = join(ROOT, 'runs/results.jsonl');
 const [cmd, target] = args;
 
 if (cmd === 'apply' && target) {
-  const rep = applySpec(target, spec, { identifiers: !flag('--swap-only'), write: !flag('--dry-run') });
+  const rep = applySpec(target, spec, { identifiers: !flag('--swap-only'), write: !flag('--dry-run'), version: opt('--version') });
   for (const f of rep.changedFiles) {
     const es = rep.edits.filter((e) => e.file === f);
     console.log(`${f}  (${es.length} edits)`);
@@ -35,6 +37,11 @@ if (cmd === 'apply' && target) {
   console.log(`\n${rep.changedFiles.length} files changed. Left for a human: ${rep.human.length}.`);
   for (const h of rep.human) console.log(`   ${h.file}:${h.line}  ${h.what}`);
   if (rep.envNames.length) console.log(`   env vars kept (the SDK reads both names): ${rep.envNames.join(', ')}`);
+  const c = checkC(target, spec, rep.changedFiles);
+  console.log(`Check C: ${c.pass ? 'PASS' : 'FAIL'}`);
+  if (opt('--json')) writeFileSync(opt('--json')!, JSON.stringify({ ...rep, checkC: c }, null, 2));
+  if (opt('--pr-body')) writeFileSync(opt('--pr-body')!, prBody(opt('--repo') ?? target, opt('--commit') ?? '', spec, rep, c));
+  if (!flag('--dry-run') && !c.pass) process.exitCode = 1;
 } else if (cmd === 'check' && target) {
   const c = checkC(target, spec);
   console.log(`Check C: ${c.pass ? 'PASS' : 'FAIL'}`);
